@@ -1,0 +1,13 @@
+-- Executar uma única vez no SQL Editor do Supabase antes do primeiro deploy.
+create table if not exists admins (id bigserial primary key, email text not null unique, password_hash text not null, created_at timestamptz not null default now());
+create table if not exists courses (id bigserial primary key, title text not null, description text default '', category text default 'Formação', duration text default '', published boolean not null default false, created_at timestamptz not null default now(), updated_at timestamptz not null default now());
+create table if not exists course_registrations (id bigserial primary key, name text not null, email text not null, phone text default '', course_id bigint references courses(id) on delete set null, course_title text not null, interest_date text default '', message text default '', created_at timestamptz not null default now());
+create table if not exists site_stats (key text primary key, value integer not null);
+insert into site_stats(key,value) values ('courses_completed',0),('professionals_trained',0),('events_dialogues',0) on conflict(key) do nothing;
+create table if not exists nav_items (id bigserial primary key, label text not null, href text not null, position integer not null default 0, visible boolean not null default true, menu_group text not null default 'main', updated_at timestamptz not null default now());
+insert into nav_items(label,href,position,visible,menu_group) values
+('Início','index.html',0,true,'main'),('Quem Somos','sobre.html',1,true,'main'),('Serviços','servicos.html',2,true,'main'),('Academia Ulandu','academia.html',3,true,'main'),('Notícias','noticias.html',4,true,'main'),('Fórum CIAI','forum-ciai.html',5,true,'more'),('Diálogos','dialogos.html',6,true,'more'),('Projetos','projetos.html',7,true,'more'),('Multimédia','multimedia.html',8,true,'more'),('Blog','blog.html',9,true,'more'),('Contactos','contacto.html',10,true,'more')
+on conflict do nothing;
+create table if not exists brand_settings (key text primary key, value text not null default '');
+create table if not exists content (id bigserial primary key, type text not null check(type in ('news','blog','project','media')), title text not null, slug text not null unique, summary text default '', body text default '', category text default '', image text default '', media_url text default '', published boolean not null default false, created_at timestamptz not null default now(), updated_at timestamptz not null default now());
+create table if not exists content_likes (content_id bigint primary key references content(id) on delete cascade, likes integer not null default 0);

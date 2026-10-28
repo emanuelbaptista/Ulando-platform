@@ -1,0 +1,83 @@
+require("dotenv").config();
+const express = require("express");
+const session = require("express-session");
+const bcrypt = require("bcryptjs");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+const crypto = require("crypto");
+
+const app = express();
+const PORT = Number(process.env.PORT || 3000);
+
+// Configuração de segurança e parsers (OBRIGATÓRIO para ler o req.body em JSON)
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Configuração da Sessão
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "ulandu-local-dev-secret",
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false } // Passa para true se usares HTTPS em produção
+  })
+);
+
+const ROOT = __dirname;
+const PUBLIC = path.join(ROOT, "public");
+const UPLOADS = path.join(ROOT, "uploads");
+const DATA = path.join(ROOT, "data");
+
+fs.mkdirSync(UPLOADS, { recursive: true });
+fs.mkdirSync(DATA, { recursive: true });
+
+// Ficheiros estáticos
+app.use(express.static(PUBLIC));
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(PUBLIC, "index.html"));
+});
+
+// Array com os 4 administradores configurados no .env
+const admins = [
+  { email: process.env.ADMIN_EMAIL, password: process.env.ADMIN_PASSWORD },
+  { email: process.env.ADMIN_EMAIL_2, password: process.env.ADMIN_PASSWORD_2 },
+  { email: process.env.ADMIN_EMAIL_3, password: process.env.ADMIN_PASSWORD_3 },
+  { email: process.env.ADMIN_EMAIL_4, password: process.env.ADMIN_PASSWORD_4 }
+];
+
+// Rota oficial de login correspondente ao pedido do admin.js (/api/admin/login)
+app.post('/api/admin/login', (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email e palavra-passe são obrigatórios.' });
+  }
+
+  // Valida se as credenciais coincidem com qualquer um dos 4 admins do .env
+  const isValidAdmin = admins.some(
+    admin => admin.email && admin.password && 
+             admin.email.toLowerCase() === email.toLowerCase().trim() && 
+             admin.password === password
+  );
+
+  if (isValidAdmin) {
+    req.session.user = { email, role: 'admin' };
+    return res.json({ success: true, message: 'Login bem-sucedido!' });
+  } else {
+    return res.status(401).json({ error: 'Credenciais inválidas.' });
+  }
+});
+
+// Avisos de ambiente
+if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.includes("MUDA-ESTE")) {
+  console.warn("AVISO: define um SESSION_SECRET forte no ficheiro .env antes de publicar.");
+}
+
+// Iniciar o servidor por último
+app.listen(PORT, () => {
+  console.log(`Servidor Ulanda a correr na porta ${PORT}`);
+});
