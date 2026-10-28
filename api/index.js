@@ -13,51 +13,515 @@ app.set('trust proxy', 1);
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: false, limit: '1mb' }));
-const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: process.env.DATABASE_URL?.includes('localhost') ? false : { rejectUnauthorized: false }, max: 3, idleTimeoutMillis: 10000, connectionTimeoutMillis: 10000 });
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL?.includes('localhost') ? false : { rejectUnauthorized: false },
+  max: 3,
+  idleTimeoutMillis: 10000,
+  connectionTimeoutMillis: 10000
+});
+
 const JWT_SECRET = process.env.SESSION_SECRET;
-const hasConfig = () => !!(process.env.DATABASE_URL && JWT_SECRET && JWT_SECRET.length >= 32 && process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD && process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.SUPABASE_STORAGE_BUCKET);
-const clean = (v, max=20000) => String(v ?? '').trim().slice(0,max);
-const slugify = v => clean(v,180).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,80) || `conteudo-${Date.now()}`;
+
+const hasConfig = () => !!(
+  process.env.DATABASE_URL &&
+  JWT_SECRET &&
+  JWT_SECRET.length >= 32 &&
+  process.env.ADMIN_EMAIL &&
+  process.env.ADMIN_PASSWORD &&
+  process.env.SUPABASE_URL &&
+  process.env.SUPABASE_SERVICE_ROLE_KEY &&
+  process.env.SUPABASE_STORAGE_BUCKET
+);
+
+const clean = (v, max = 20000) => String(v ?? '').trim().slice(0, max);
+const slugify = v => clean(v, 180).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80) || `conteudo-${Date.now()}`;
 const cookieName = 'ulandu.sid';
-function admin(req,res,next){
-  if (!hasConfig()) return res.status(503).json({error:'O backend ainda não está configurado. Preenche as variáveis de ambiente da Vercel e executa o schema.sql no Supabase.'});
-  try { const token = req.cookiesToken || (req.headers.cookie||'').split(';').map(x=>x.trim()).find(x=>x.startsWith(cookieName+'='))?.slice(cookieName.length+1); if(!token) throw Error(); const p=jwt.verify(decodeURIComponent(token),JWT_SECRET); req.admin={id:p.sub,email:p.email}; next(); }
-  catch { res.status(401).json({error:'Sessão terminada. Inicia sessão novamente.'}); }
+
+function admin(req, res, next) {
+  if (!hasConfig()) return res.status(503).json({ error: 'O backend ainda não está configurado. Preenche as variáveis de ambiente da Vercel e executa o schema.sql no Supabase.' });
+  try {
+    const token = req.cookiesToken || (req.headers.cookie || '').split(';').map(x => x.trim()).find(x => x.startsWith(cookieName + '='));
+    if (!token) throw Error();
+    const p = jwt.verify(decodeURIComponent(token.slice(cookieName.length + 1)), JWT_SECRET);
+    req.admin = { id: p.sub, email: p.email };
+    next();
+  } catch {
+    res.status(401).json({ error: 'Sessão terminada. Inicia sessão novamente.' });
+  }
 }
-const loginLimiter=rateLimit({windowMs:15*60*1000,limit:8,standardHeaders:true,legacyHeaders:false});
-const likeLimiter=rateLimit({windowMs:60*1000,limit:30,standardHeaders:true,legacyHeaders:false});
-const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:30*1024*1024,files:1},fileFilter:(_r,f,cb)=>/^(image\/(jpeg|png|webp|avif)|video\/(mp4|webm))$/.test(f.mimetype)?cb(null,true):cb(new Error('Formato não permitido. Usa JPG, PNG, WEBP, AVIF, MP4 ou WEBM.'))});
-async function q(sql,params=[]){ if(!process.env.DATABASE_URL) throw Error('DATABASE_URL não configurada.'); return (await pool.query(sql,params)).rows; }
-async function seedAdmin(){ const email=clean(process.env.ADMIN_EMAIL,200).toLowerCase(), password=String(process.env.ADMIN_PASSWORD||''); if(!email||!password||password.length<12) return; const found=await q('SELECT id FROM admins WHERE email=$1',[email]); if(!found.length) await q('INSERT INTO admins(email,password_hash) VALUES($1,$2) ON CONFLICT(email) DO NOTHING',[email,await bcrypt.hash(password,12)]); }
-app.get('/api/health',async(_req,res)=>{try{if(!hasConfig())return res.status(503).json({ok:false,configured:false,missing:['DATABASE_URL','SESSION_SECRET (mínimo 32 caracteres)','ADMIN_EMAIL','ADMIN_PASSWORD (mínimo 12 caracteres)','SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY','SUPABASE_STORAGE_BUCKET'].filter(k=>!process.env[k] || (k==='SESSION_SECRET'&&process.env[k].length<32) || (k==='ADMIN_PASSWORD'&&process.env[k].length<12))});await q('SELECT 1');res.json({ok:true,configured:true,database:'connected'});}catch(e){res.status(503).json({ok:false,error:e.message});}});
-app.get('/api/navigation',async(_req,res)=>{try{res.json(await q('SELECT id,label,href,position,menu_group FROM nav_items WHERE visible=true ORDER BY position,id'));}catch(e){res.status(503).json({error:'A base de dados ainda não está pronta.'});}});
-app.get('/api/brand-settings',async(_req,res)=>{try{const rows=await q('SELECT key,value FROM brand_settings');res.json(Object.fromEntries(rows.map(x=>[x.key,x.value])));}catch(e){res.status(503).json({error:'A base de dados ainda não está pronta.'});}});
-app.get('/api/site-stats',async(_req,res)=>{try{const rows=await q('SELECT key,value FROM site_stats');res.json(Object.fromEntries(rows.map(x=>[x.key,Number(x.value)])));}catch(e){res.status(503).json({error:'A base de dados ainda não está pronta.'});}});
-app.get('/api/courses',async(_req,res)=>{try{res.json(await q('SELECT id,title,description,category,duration FROM courses WHERE published=true ORDER BY created_at DESC'));}catch(e){res.status(503).json({error:'A base de dados ainda não está pronta.'});}});
-app.get('/api/content',async(req,res)=>{try{const type=clean(req.query.type,20);const allowed=['news','blog','project','media'];const rows=allowed.includes(type)?await q('SELECT c.*,COALESCE(l.likes,0)::int AS likes FROM content c LEFT JOIN content_likes l ON l.content_id=c.id WHERE c.published=true AND c.type=$1 ORDER BY c.created_at DESC',[type]):await q('SELECT c.*,COALESCE(l.likes,0)::int AS likes FROM content c LEFT JOIN content_likes l ON l.content_id=c.id WHERE c.published=true ORDER BY c.created_at DESC');res.json(rows);}catch(e){res.status(503).json({error:'A base de dados ainda não está pronta.'});}});
-app.post('/api/content/:id/like',likeLimiter,async(req,res)=>{try{const id=Number(req.params.id);const rows=await q('SELECT id FROM content WHERE id=$1 AND published=true',[id]);if(!rows.length)return res.status(404).json({error:'Publicação não encontrada.'});const result=await q('INSERT INTO content_likes(content_id,likes) VALUES($1,1) ON CONFLICT(content_id) DO UPDATE SET likes=content_likes.likes+1 RETURNING likes',[id]);res.json({likes:Number(result[0].likes)});}catch(e){res.status(500).json({error:'Não foi possível registar o gosto.'});}});
-app.post('/api/course-registrations',async(req,res)=>{try{const name=clean(req.body.name,160),email=clean(req.body.email,200).toLowerCase(),phone=clean(req.body.phone,80),title=clean(req.body.course_title,180),date=clean(req.body.interest_date,30),message=clean(req.body.message,3000);if(!name||!/^\S+@\S+\.\S+$/.test(email)||!title)return res.status(400).json({error:'Preenche o nome, um e-mail válido e o curso pretendido.'});const c=(await q('SELECT id FROM courses WHERE title=$1 AND published=true',[title]))[0];await q('INSERT INTO course_registrations(name,email,phone,course_id,course_title,interest_date,message) VALUES($1,$2,$3,$4,$5,$6,$7)',[name,email,phone,c?.id||null,title,date,message]);res.status(201).json({ok:true,message:'Inscrição enviada.'});}catch(e){res.status(500).json({error:'Não foi possível guardar a inscrição.'});}});
-app.post('/api/admin/login',loginLimiter,async(req,res)=>{try{if(!hasConfig())return res.status(503).json({error:'Configura primeiro o backend. Consulta o README e /api/health.'});await seedAdmin();const email=clean(req.body.email,200).toLowerCase(),password=String(req.body.password||'');const rows=await q('SELECT id,email,password_hash FROM admins WHERE email=$1',[email]);if(!rows.length||!await bcrypt.compare(password,rows[0].password_hash))return res.status(401).json({error:'E-mail ou palavra-passe incorretos.'});const token=jwt.sign({sub:String(rows[0].id),email:rows[0].email},JWT_SECRET,{expiresIn:'8h'});res.setHeader('Set-Cookie',`${cookieName}=${encodeURIComponent(token)}; HttpOnly; ${process.env.NODE_ENV==='production'?'Secure; ':''}SameSite=Lax; Path=/; Max-Age=28800`);res.json({ok:true,email:rows[0].email,admin:{email:rows[0].email}});}catch(e){res.status(500).json({error:'Não foi possível iniciar sessão. Confirma a configuração da base de dados.'});}});
-app.get('/api/admin/me',admin,(req,res)=>res.json({authenticated:true,email:req.admin.email}));
-app.post('/api/admin/logout',(_req,res)=>{res.setHeader('Set-Cookie',`${cookieName}=; HttpOnly; ${process.env.NODE_ENV==='production'?'Secure; ':''}SameSite=Lax; Path=/; Max-Age=0`);res.json({ok:true});});
-app.get('/api/admin/navigation',admin,async(_req,res)=>{try{res.json(await q('SELECT id,label,href,position,visible,menu_group FROM nav_items ORDER BY position,id'));}catch(e){res.status(500).json({error:'Erro ao carregar o menu.'});}});
-app.post('/api/admin/navigation',admin,async(req,res)=>{try{const label=clean(req.body.label,60),href=clean(req.body.href,300);if(!label||!href)return res.status(400).json({error:'Indica o nome e o endereço do menu.'});const r=await q('INSERT INTO nav_items(label,href,position,visible,menu_group) VALUES($1,$2,$3,$4,$5) RETURNING *',[label,href,Number(req.body.position)||0,req.body.visible!==false,req.body.menu_group==='more'?'more':'main']);res.status(201).json(r[0]);}catch(e){res.status(500).json({error:'Não foi possível adicionar o menu.'});}});
-app.put('/api/admin/navigation/:id',admin,async(req,res)=>{try{const old=(await q('SELECT * FROM nav_items WHERE id=$1',[Number(req.params.id)]))[0];if(!old)return res.status(404).json({error:'Item não encontrado.'});const r=await q('UPDATE nav_items SET label=$1,href=$2,position=$3,visible=$4,menu_group=$5,updated_at=now() WHERE id=$6 RETURNING *',[clean(req.body.label??old.label,60),clean(req.body.href??old.href,300),Number(req.body.position??old.position)||0,req.body.visible===undefined?old.visible:!!req.body.visible,['main','more'].includes(req.body.menu_group)?req.body.menu_group:old.menu_group,old.id]);res.json(r[0]);}catch(e){res.status(500).json({error:'Não foi possível editar o menu.'});}});
-app.delete('/api/admin/navigation/:id',admin,async(req,res)=>{try{await q('DELETE FROM nav_items WHERE id=$1',[Number(req.params.id)]);res.json({ok:true});}catch(e){res.status(500).json({error:'Não foi possível remover o menu.'});}});
-app.put('/api/admin/brand-settings',admin,async(req,res)=>{try{for(const key of ['logo_light','logo_dark'])if(req.body[key]!==undefined)await q('INSERT INTO brand_settings(key,value) VALUES($1,$2) ON CONFLICT(key) DO UPDATE SET value=excluded.value',[key,clean(req.body[key],1000)]);const rows=await q('SELECT key,value FROM brand_settings');res.json(Object.fromEntries(rows.map(x=>[x.key,x.value])));}catch(e){res.status(500).json({error:'Não foi possível guardar os logótipos.'});}});
-app.get('/api/admin/content',admin,async(_req,res)=>{try{res.json(await q('SELECT * FROM content ORDER BY created_at DESC'));}catch(e){res.status(500).json({error:'Erro ao carregar publicações.'});}});
-app.post('/api/admin/content',admin,async(req,res)=>{try{const type=clean(req.body.type,20),title=clean(req.body.title,180);if(!['news','blog','project','media'].includes(type)||!title)return res.status(400).json({error:'Indica um tipo e título válidos.'});let slug=slugify(req.body.slug||title);if((await q('SELECT id FROM content WHERE slug=$1',[slug])).length)slug+=`-${crypto.randomBytes(3).toString('hex')}`;const r=await q('INSERT INTO content(type,title,slug,summary,body,category,image,media_url,published) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *',[type,title,slug,clean(req.body.summary,500),clean(req.body.body,30000),clean(req.body.category,80),clean(req.body.image,1000),clean(req.body.media_url,1000),!!req.body.published]);res.status(201).json(r[0]);}catch(e){res.status(500).json({error:'Não foi possível guardar a publicação.'});}});
-app.put('/api/admin/content/:id',admin,async(req,res)=>{try{const old=(await q('SELECT * FROM content WHERE id=$1',[Number(req.params.id)]))[0];if(!old)return res.status(404).json({error:'Conteúdo não encontrado.'});const type=clean(req.body.type??old.type,20),title=clean(req.body.title??old.title,180);if(!['news','blog','project','media'].includes(type)||!title)return res.status(400).json({error:'Dados inválidos.'});const slug=slugify(req.body.slug||title);const conflict=(await q('SELECT id FROM content WHERE slug=$1 AND id<>$2',[slug,old.id])).length;if(conflict)return res.status(409).json({error:'Já existe conteúdo com este endereço.'});const r=await q('UPDATE content SET type=$1,title=$2,slug=$3,summary=$4,body=$5,category=$6,image=$7,media_url=$8,published=$9,updated_at=now() WHERE id=$10 RETURNING *',[type,title,slug,clean(req.body.summary??old.summary,500),clean(req.body.body??old.body,30000),clean(req.body.category??old.category,80),clean(req.body.image??old.image,1000),clean(req.body.media_url??old.media_url,1000),req.body.published===undefined?old.published:!!req.body.published,old.id]);res.json(r[0]);}catch(e){res.status(500).json({error:'Não foi possível editar a publicação.'});}});
-app.delete('/api/admin/content/:id',admin,async(req,res)=>{try{await q('DELETE FROM content WHERE id=$1',[Number(req.params.id)]);res.json({ok:true});}catch(e){res.status(500).json({error:'Não foi possível eliminar o conteúdo.'});}});
-app.post('/api/admin/upload',admin,(req,res)=>{upload.single('file')(req,res,async err=>{if(err)return res.status(400).json({error:err.message});if(!req.file)return res.status(400).json({error:'Seleciona um ficheiro.'});try{const bucket=process.env.SUPABASE_STORAGE_BUCKET;const ext=(req.file.originalname.match(/\.([a-zA-Z0-9]+)$/)||[])[1]||'bin';const name=`${Date.now()}-${crypto.randomBytes(8).toString('hex')}.${ext}`;const base=process.env.SUPABASE_URL.replace(/\/$/,'');const url=`${base}/storage/v1/object/${bucket}/${name}`;const out=await fetch(url,{method:'POST',headers:{apikey:process.env.SUPABASE_SERVICE_ROLE_KEY,Authorization:`Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,'Content-Type':req.file.mimetype,'x-upsert':'false'},body:req.file.buffer});if(!out.ok)throw Error(await out.text());res.json({url:`${base}/storage/v1/object/public/${bucket}/${name}`,mimeType:req.file.mimetype,originalName:req.file.originalname});}catch(e){res.status(500).json({error:'Falha no armazenamento. Confirma o bucket público no Supabase.'});}});});
-app.get('/api/admin/courses',admin,async(_req,res)=>{try{res.json(await q('SELECT * FROM courses ORDER BY created_at DESC'));}catch(e){res.status(500).json({error:'Erro ao carregar cursos.'});}});
-app.post('/api/admin/courses',admin,async(req,res)=>{try{const title=clean(req.body.title,180);if(!title)return res.status(400).json({error:'O nome do curso é obrigatório.'});const r=await q('INSERT INTO courses(title,description,category,duration,published) VALUES($1,$2,$3,$4,$5) RETURNING *',[title,clean(req.body.description,3000),clean(req.body.category,100)||'Formação',clean(req.body.duration,100),req.body.published!==false]);res.status(201).json(r[0]);}catch(e){res.status(500).json({error:'Não foi possível guardar o curso.'});}});
-app.put('/api/admin/courses/:id',admin,async(req,res)=>{try{const title=clean(req.body.title,180);if(!title)return res.status(400).json({error:'O nome do curso é obrigatório.'});const r=await q('UPDATE courses SET title=$1,description=$2,category=$3,duration=$4,published=$5,updated_at=now() WHERE id=$6 RETURNING *',[title,clean(req.body.description,3000),clean(req.body.category,100)||'Formação',clean(req.body.duration,100),!!req.body.published,Number(req.params.id)]);if(!r.length)return res.status(404).json({error:'Curso não encontrado.'});res.json(r[0]);}catch(e){res.status(500).json({error:'Não foi possível editar o curso.'});}});
-app.delete('/api/admin/courses/:id',admin,async(req,res)=>{try{await q('DELETE FROM courses WHERE id=$1',[Number(req.params.id)]);res.json({ok:true});}catch(e){res.status(500).json({error:'Não foi possível eliminar o curso.'});}});
-app.put('/api/admin/site-stats',admin,async(req,res)=>{try{for(const key of ['courses_completed','professionals_trained','events_dialogues'])if(req.body[key]!==undefined){const value=Number(req.body[key]);if(!Number.isInteger(value)||value<0||value>10000000)return res.status(400).json({error:'Indicadores inválidos.'});await q('INSERT INTO site_stats(key,value) VALUES($1,$2) ON CONFLICT(key) DO UPDATE SET value=excluded.value',[key,value]);}const rows=await q('SELECT key,value FROM site_stats');res.json(Object.fromEntries(rows.map(x=>[x.key,Number(x.value)])));}catch(e){res.status(500).json({error:'Não foi possível guardar os indicadores.'});}});
-app.get('/api/admin/analytics',admin,async(_req,res)=>{try{const [metrics,courses,registrations,content,published,recentRegistrations]=await Promise.all([q('SELECT key,value FROM site_stats'),q('SELECT count(*)::int AS n FROM courses'),q('SELECT count(*)::int AS n FROM course_registrations'),q('SELECT count(*)::int AS n FROM content'),q('SELECT count(*)::int AS n FROM content WHERE published=true'),q('SELECT name,email,course_title,created_at FROM course_registrations ORDER BY id DESC LIMIT 8')]);res.json({metrics:Object.fromEntries(metrics.map(x=>[x.key,Number(x.value)])),courses:courses[0].n,registrations:registrations[0].n,content:content[0].n,published:published[0].n,recentRegistrations});}catch(e){res.status(500).json({error:'Não foi possível carregar as estatísticas.'});}});
-app.get('/api/admin/admins',admin,async(_req,res)=>{try{res.json(await q('SELECT id,email,created_at FROM admins ORDER BY id'));}catch(e){res.status(500).json({error:'Erro ao listar administradores.'});}});
-app.post('/api/admin/admins',admin,async(req,res)=>{try{const email=clean(req.body.email,200).toLowerCase(),password=String(req.body.password||'');if(!/^\S+@\S+\.\S+$/.test(email)||password.length<12)return res.status(400).json({error:'Indica e-mail válido e palavra-passe com pelo menos 12 caracteres.'});const r=await q('INSERT INTO admins(email,password_hash) VALUES($1,$2) ON CONFLICT(email) DO NOTHING RETURNING id,email,created_at',[email,await bcrypt.hash(password,12)]);if(!r.length)return res.status(409).json({error:'Já existe uma conta com esse e-mail.'});res.status(201).json(r[0]);}catch(e){res.status(500).json({error:'Não foi possível criar administrador.'});}});
-app.delete('/api/admin/admins/:id',admin,async(req,res)=>{try{if(String(req.params.id)===String(req.admin.id))return res.status(400).json({error:'Não podes eliminar a tua própria conta enquanto estás ligado.'});const n=await q('SELECT count(*)::int AS n FROM admins');if(n[0].n<=1)return res.status(400).json({error:'Tem de existir pelo menos um administrador.'});await q('DELETE FROM admins WHERE id=$1',[Number(req.params.id)]);res.json({ok:true});}catch(e){res.status(500).json({error:'Não foi possível remover administrador.'});}});
-app.use((err,_req,res,_next)=>{console.error(err);res.status(500).json({error:'Erro inesperado no servidor.'});});
-module.exports=app;
+
+const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 8, standardHeaders: true, legacyHeaders: false });
+const likeLimiter = rateLimit({ windowMs: 60 * 1000, limit: 30, standardHeaders: true, legacyHeaders: false });
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 30 * 1024 * 1024, files: 1 },
+  fileFilter: (_r, f, cb) => {
+    if (/^(image\/(jpeg|png|webp|avif)|video\/(mp4|webm))$/.test(f.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Formato não permitido. Usa JPG, PNG, WEBP, AVIF, MP4 ou WEBM.'));
+    }
+  }
+});
+
+async function q(sql, params = []) {
+  if (!process.env.DATABASE_URL) throw Error('DATABASE_URL não configurada.');
+  return (await pool.query(sql, params)).rows;
+}
+
+async function seedAdmin() {
+  const email = clean(process.env.ADMIN_EMAIL, 200).toLowerCase();
+  const password = String(process.env.ADMIN_PASSWORD || '');
+  if (!email || !password || password.length < 12) return;
+  const found = await q('SELECT id FROM admins WHERE email = $1', [email]);
+  if (!found.length) {
+    await q('INSERT INTO admins (email, password_hash) VALUES ($1, $2) ON CONFLICT (email) DO NOTHING', [email, await bcrypt.hash(password, 12)]);
+  }
+}
+
+app.get('/api/health', async (_req, res) => {
+  try {
+    if (!hasConfig()) {
+      return res.status(503).json({
+        ok: false,
+        configured: false,
+        missing: [
+          'DATABASE_URL',
+          'SESSION_SECRET (mínimo 32 caracteres)',
+          'ADMIN_EMAIL',
+          'ADMIN_PASSWORD (mínimo 12 caracteres)',
+          'SUPABASE_URL',
+          'SUPABASE_SERVICE_ROLE_KEY',
+          'SUPABASE_STORAGE_BUCKET'
+        ].filter(k => {
+          if (k.startsWith('SESSION_SECRET')) return !process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32;
+          if (k.startsWith('ADMIN_PASSWORD')) return !process.env.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD.length < 12;
+          const envName = k.split(' ')[0];
+          return !process.env[envName];
+        })
+      });
+    }
+    await q('SELECT 1');
+    res.json({ ok: true, configured: true, database: 'connected' });
+  } catch (e) {
+    res.status(503).json({ ok: false, error: e.message });
+  }
+});
+
+app.get('/api/navigation', async (_req, res) => {
+  try {
+    res.json(await q('SELECT id, label, href, position, menu_group FROM nav_items WHERE visible = true ORDER BY position, id'));
+  } catch (e) {
+    res.status(503).json({ error: 'A base de dados ainda não está pronta.' });
+  }
+});
+
+app.get('/api/brand-settings', async (_req, res) => {
+  try {
+    const rows = await q('SELECT key, value FROM brand_settings');
+    res.json(Object.fromEntries(rows.map(x => [x.key, x.value])));
+  } catch (e) {
+    res.status(503).json({ error: 'A base de dados ainda não está pronta.' });
+  }
+});
+
+app.get('/api/site-stats', async (_req, res) => {
+  try {
+    const rows = await q('SELECT key, value FROM site_stats');
+    res.json(Object.fromEntries(rows.map(x => [x.key, Number(x.value)])));
+  } catch (e) {
+    res.status(503).json({ error: 'A base de dados ainda não está pronta.' });
+  }
+});
+
+app.get('/api/courses', async (_req, res) => {
+  try {
+    res.json(await q('SELECT id, title, description, category, duration FROM courses WHERE published = true ORDER BY created_at DESC'));
+  } catch (e) {
+    res.status(503).json({ error: 'A base de dados ainda não está pronta.' });
+  }
+});
+
+app.get('/api/content', async (req, res) => {
+  try {
+    const type = clean(req.query.type, 20);
+    const allowed = ['news', 'blog', 'project', 'media'];
+    const rows = allowed.includes(type)
+      ? await q('SELECT c.*, COALESCE(l.likes, 0)::int AS likes FROM content c LEFT JOIN content_likes l ON l.content_id = c.id WHERE c.published = true AND c.type = $1 ORDER BY c.created_at DESC', [type])
+      : await q('SELECT c.*, COALESCE(l.likes, 0)::int AS likes FROM content c LEFT JOIN content_likes l ON l.content_id = c.id WHERE c.published = true ORDER BY c.created_at DESC');
+    res.json(rows);
+  } catch (e) {
+    res.status(503).json({ error: 'A base de dados ainda não está pronta.' });
+  }
+});
+
+app.post('/api/content/:id/like', likeLimiter, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const rows = await q('SELECT id FROM content WHERE id = $1 AND published = true', [id]);
+    if (!rows.length) return res.status(404).json({ error: 'Publicação não encontrada.' });
+    const result = await q('INSERT INTO content_likes (content_id, likes) VALUES ($1, 1) ON CONFLICT (content_id) DO UPDATE SET likes = content_likes.likes + 1 RETURNING likes', [id]);
+    res.json({ likes: Number(result[0].likes) });
+  } catch (e) {
+    res.status(500).json({ error: 'Não foi possível registar o gosto.' });
+  }
+});
+
+app.post('/api/course-registrations', async (req, res) => {
+  try {
+    const name = clean(req.body.name, 160);
+    const email = clean(req.body.email, 200).toLowerCase();
+    const phone = clean(req.body.phone, 80);
+    const title = clean(req.body.title, 180);
+    const course_title = clean(req.body.course_title, 180);
+    const date = clean(req.body.interest_date, 30);
+    const message = clean(req.body.message, 3000);
+
+    if (!name || !/^\S+@\S+\.\S+$/.test(email) || !title) {
+      return res.status(400).json({ error: 'Preenche o nome, um e-mail válido e o curso pretendido.' });
+    }
+    const c = await q('SELECT id FROM courses WHERE title = $1 AND published = true', [title]);
+    const course_id = c[0]?.id || null;
+
+    await q('INSERT INTO course_registrations (name, email, phone, course_id, course_title, interest_date, message) VALUES ($1, $2, $3, $4, $5, $6, $7)', [name, email, phone, course_id, course_title || title, date, message]);
+    res.status(201).json({ ok: true, message: 'Inscrição enviada.' });
+  } catch (e) {
+    res.status(500).json({ error: 'Não foi possível guardar a inscrição.' });
+  }
+});
+
+app.post('/api/admin/login', loginLimiter, async (req, res) => {
+  try {
+    if (!hasConfig()) return res.status(503).json({ error: 'Configura primeiro o backend. Consulta o README e /api/health.' });
+    await seedAdmin();
+    const email = clean(req.body.email, 200).toLowerCase();
+    const password = String(req.body.password || '');
+    const rows = await q('SELECT id, email, password_hash FROM admins WHERE email = $1', [email]);
+    if (!rows.length || !(await bcrypt.compare(password, rows[0].password_hash))) {
+      return res.status(401).json({ error: 'E-mail ou palavra-passe incorretos.' });
+    }
+    const token = jwt.sign({ sub: rows[0].id, email: rows[0].email }, JWT_SECRET, { expiresIn: '8h' });
+    res.setHeader('Set-Cookie', `${cookieName}=${encodeURIComponent(token)}; HttpOnly; Path=/; Max-Age=28800; SameSite=Lax; ${process.env.NODE_ENV === 'production' ? 'Secure;' : ''}`);
+    res.json({ ok: true, email: rows[0].email, admin: { id: rows[0].id, email: rows[0].email } });
+  } catch (e) {
+    res.status(500).json({ error: 'Erro interno ao iniciar sessão.' });
+  }
+});
+
+app.post('/api/admin/logout', (_req, res) => {
+  res.setHeader('Set-Cookie', `${cookieName}=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax; ${process.env.NODE_ENV === 'production' ? 'Secure;' : ''}`);
+  res.json({ ok: true });
+});
+
+app.get('/api/admin/navigation', admin, async (_req, res) => {
+  try {
+    res.json(await q('SELECT id, label, href, position, visible, menu_group FROM nav_items ORDER BY position, id'));
+  } catch (e) {
+    res.status(500).json({ error: 'Erro ao carregar o menu.' });
+  }
+});
+
+app.post('/api/admin/navigation', admin, async (req, res) => {
+  try {
+    const label = clean(req.body.label, 60);
+    const href = clean(req.body.href, 300);
+    if (!label || !href) return res.status(400).json({ error: 'Indica o nome e o endereço do menu.' });
+    const r = await q('INSERT INTO nav_items (label, href, position, visible, menu_group) VALUES ($1, $2, $3, $4, $5) RETURNING *', [
+      label,
+      href,
+      Number(req.body.position) || 0,
+      req.body.visible !== false,
+      req.body.menu_group === 'more' ? 'more' : 'main'
+    ]);
+    res.status(201).json(r[0]);
+  } catch (e) {
+    res.status(500).json({ error: 'Não foi possível adicionar o menu.' });
+  }
+});
+
+app.put('/api/admin/navigation/:id', admin, async (req, res) => {
+  try {
+    const old = (await q('SELECT * FROM nav_items WHERE id = $1', [Number(req.params.id)]))[0];
+    if (!old) return res.status(404).json({ error: 'Item não encontrado.' });
+    const r = await q('UPDATE nav_items SET label = $1, href = $2, position = $3, visible = $4, menu_group = $5, updated_at = now() WHERE id = $6 RETURNING *', [
+      clean(req.body.label ?? old.label, 60),
+      clean(req.body.href ?? old.href, 300),
+      Number(req.body.position ?? old.position) || 0,
+      req.body.visible === undefined ? old.visible : !!req.body.visible,
+      ['main', 'more'].includes(req.body.menu_group) ? req.body.menu_group : old.menu_group,
+      old.id
+    ]);
+    res.json(r[0]);
+  } catch (e) {
+    res.status(500).json({ error: 'Não foi possível editar o menu.' });
+  }
+});
+
+app.delete('/api/admin/navigation/:id', admin, async (req, res) => {
+  try {
+    await q('DELETE FROM nav_items WHERE id = $1', [Number(req.params.id)]);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Não foi possível remover o menu.' });
+  }
+});
+
+app.put('/api/admin/brand-settings', admin, async (req, res) => {
+  try {
+    for (const key of ['logo_light', 'logo_dark']) {
+      if (req.body[key] !== undefined) {
+        await q('INSERT INTO brand_settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = excluded.value', [key, clean(req.body[key], 1000)]);
+      }
+    }
+    const rows = await q('SELECT key, value FROM brand_settings');
+    res.json(Object.fromEntries(rows.map(x => [x.key, x.value])));
+  } catch (e) {
+    res.status(500).json({ error: 'Não foi possível guardar os logótipos.' });
+  }
+});
+
+app.get('/api/admin/content', admin, async (_req, res) => {
+  try {
+    res.json(await q('SELECT * FROM content ORDER BY created_at DESC'));
+  } catch (e) {
+    res.status(500).json({ error: 'Erro ao carregar publicações.' });
+  }
+});
+
+app.post('/api/admin/content', admin, async (req, res) => {
+  try {
+    const type = clean(req.body.type, 20);
+    const title = clean(req.body.title, 180);
+    if (!['news', 'blog', 'project', 'media'].includes(type) || !title) {
+      return res.status(400).json({ error: 'Indica um tipo e título válidos.' });
+    }
+    let slug = slugify(req.body.slug || title);
+    const exists = await q('SELECT id FROM content WHERE slug = $1', [slug]);
+    if (exists.length) slug += `-${crypto.randomBytes(3).toString('hex')}`;
+
+    const r = await q('INSERT INTO content (type, title, slug, summary, body, category, image, media_url, published) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *', [
+      type,
+      title,
+      slug,
+      clean(req.body.summary, 500),
+      clean(req.body.body, 30000),
+      clean(req.body.category, 80),
+      clean(req.body.image, 1000),
+      clean(req.body.media_url, 1000),
+      !!req.body.published
+    ]);
+    res.status(201).json(r[0]);
+  } catch (e) {
+    res.status(500).json({ error: 'Não foi possível guardar a publicação.' });
+  }
+});
+
+app.put('/api/admin/content/:id', admin, async (req, res) => {
+  try {
+    const old = (await q('SELECT * FROM content WHERE id = $1', [Number(req.params.id)]))[0];
+    if (!old) return res.status(404).json({ error: 'Conteúdo não encontrado.' });
+    const type = clean(req.body.type ?? old.type, 20);
+    const title = clean(req.body.title ?? old.title, 180);
+    if (!['news', 'blog', 'project', 'media'].includes(type) || !title) {
+      return res.status(400).json({ error: 'Dados inválidos.' });
+    }
+    const slug = slugify(req.body.slug || title);
+    const conflict = await q('SELECT id FROM content WHERE slug = $1 AND id <> $2', [slug, old.id]);
+    if (conflict.length) return res.status(409).json({ error: 'Já existe conteúdo com este endereço.' });
+
+    const r = await q('UPDATE content SET type = $1, title = $2, slug = $3, summary = $4, body = $5, category = $6, image = $7, media_url = $8, published = $9, updated_at = now() WHERE id = $10 RETURNING *', [
+      type,
+      title,
+      slug,
+      clean(req.body.summary ?? old.summary, 500),
+      clean(req.body.body ?? old.body, 30000),
+      clean(req.body.category ?? old.category, 80),
+      clean(req.body.image ?? old.image, 1000),
+      clean(req.body.media_url ?? old.media_url, 1000),
+      req.body.published === undefined ? old.published : !!req.body.published,
+      old.id
+    ]);
+    res.json(r[0]);
+  } catch (e) {
+    res.status(500).json({ error: 'Não foi possível editar a publicação.' });
+  }
+});
+
+app.delete('/api/admin/content/:id', admin, async (req, res) => {
+  try {
+    await q('DELETE FROM content WHERE id = $1', [Number(req.params.id)]);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Não foi possível eliminar o conteúdo.' });
+  }
+});
+
+app.post('/api/admin/upload', admin, (req, res) => {
+  upload.single('file')(req, res, async (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    if (!req.file) return res.status(400).json({ error: 'Seleciona um ficheiro.' });
+    try {
+      const bucket = process.env.SUPABASE_STORAGE_BUCKET;
+      const ext = (req.file.originalname.match(/\.([a-zA-Z0-9]+)$/) || [, 'bin'])[1];
+      const name = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}.${ext}`;
+      const base = process.env.SUPABASE_URL.replace(/\/$/, '');
+      const url = `${base}/storage/v1/object/${bucket}/${name}`;
+      const out = await fetch(url, {
+        method: 'POST',
+        headers: {
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+          'Content-Type': req.file.mimetype,
+          'x-upsert': 'false'
+        },
+        body: req.file.buffer
+      });
+      if (!out.ok) throw Error(await out.text());
+      res.json({
+        url: `${base}/storage/v1/object/public/${bucket}/${name}`,
+        mimeType: req.file.mimetype,
+        originalName: req.file.originalname
+      });
+    } catch (e) {
+      res.status(500).json({ error: 'Falha no armazenamento. Confirma o bucket público no Supabase.' });
+    }
+  });
+});
+
+app.get('/api/admin/courses', admin, async (_req, res) => {
+  try {
+    res.json(await q('SELECT * FROM courses ORDER BY created_at DESC'));
+  } catch (e) {
+    res.status(500).json({ error: 'Erro ao carregar cursos.' });
+  }
+});
+
+app.post('/api/admin/courses', admin, async (req, res) => {
+  try {
+    const title = clean(req.body.title, 180);
+    if (!title) return res.status(400).json({ error: 'O nome do curso é obrigatório.' });
+    const r = await q('INSERT INTO courses (title, description, category, duration, published) VALUES ($1, $2, $3, $4, $5) RETURNING *', [
+      title,
+      clean(req.body.description, 3000),
+      clean(req.body.category, 100) || 'Formação',
+      clean(req.body.duration, 100),
+      req.body.published !== false
+    ]);
+    res.status(201).json(r[0]);
+  } catch (e) {
+    res.status(500).json({ error: 'Não foi possível guardar o curso.' });
+  }
+});
+
+app.put('/api/admin/courses/:id', admin, async (req, res) => {
+  try {
+    const old = (await q('SELECT * FROM courses WHERE id = $1', [Number(req.params.id)]))[0];
+    if (!old) return res.status(404).json({ error: 'Curso não encontrado.' });
+    const title = clean(req.body.title ?? old.title, 180);
+    if (!title) return res.status(400).json({ error: 'O nome do curso é obrigatório.' });
+    const r = await q('UPDATE courses SET title = $1, description = $2, category = $3, duration = $4, published = $5, updated_at = now() WHERE id = $6 RETURNING *', [
+      title,
+      clean(req.body.description ?? old.description, 3000),
+      clean(req.body.category ?? old.category, 100),
+      clean(req.body.duration ?? old.duration, 100),
+      req.body.published === undefined ? old.published : !!req.body.published,
+      old.id
+    ]);
+    res.json(r[0]);
+  } catch (e) {
+    res.status(500).json({ error: 'Não foi possível editar o curso.' });
+  }
+});
+
+app.delete('/api/admin/courses/:id', admin, async (req, res) => {
+  try {
+    await q('DELETE FROM courses WHERE id = $1', [Number(req.params.id)]);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Não foi possível eliminar o curso.' });
+  }
+});
+
+app.put('/api/admin/site-stats', admin, async (req, res) => {
+  try {
+    for (const key of ['courses_completed', 'professionals_trained', 'events_dialogues']) {
+      if (req.body[key] !== undefined) {
+        const value = Number(req.body[key]);
+        if (!Number.isInteger(value) || value < 0 || value > 10000000) return res.status(400).json({ error: 'Indicadores inválidos.' });
+        await q('INSERT INTO site_stats (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = excluded.value', [key, value]);
+      }
+    }
+    const rows = await q('SELECT key, value FROM site_stats');
+    res.json(Object.fromEntries(rows.map(x => [x.key, Number(x.value)])));
+  } catch (e) {
+    res.status(500).json({ error: 'Não foi possível guardar os indicadores.' });
+  }
+});
+
+app.get('/api/admin/analytics', admin, async (_req, res) => {
+  try {
+    const [metrics, courses, registrations, content, publishedContent, recentRegistrations] = await Promise.all([
+      q('SELECT key, value FROM site_stats'),
+      q('SELECT count(*)::int AS n FROM courses'),
+      q('SELECT count(*)::int AS n FROM course_registrations'),
+      q('SELECT count(*)::int AS n FROM content'),
+      q('SELECT count(*)::int AS n FROM content WHERE published = true'),
+      q('SELECT name, email, course_title, created_at FROM course_registrations ORDER BY id DESC LIMIT 8')
+    ]);
+    res.json({
+      metrics: Object.fromEntries(metrics.map(x => [x.key, Number(x.value)])),
+      courses: courses[0].n,
+      registrations: registrations[0].n,
+      content: content[0].n,
+      published: publishedContent[0].n,
+      recentRegistrations
+    });
+  } catch (e) {
+    res.status(500).json({ error: 'Não foi possível carregar as estatísticas.' });
+  }
+});
+
+app.get('/api/admin/admins', admin, async (_req, res) => {
+  try {
+    res.json(await q('SELECT id, email, created_at FROM admins ORDER BY id'));
+  } catch (e) {
+    res.status(500).json({ error: 'Erro ao listar administradores.' });
+  }
+});
+
+app.post('/api/admin/admins', admin, async (req, res) => {
+  try {
+    const email = clean(req.body.email, 200).toLowerCase();
+    const password = String(req.body.password || '');
+    if (!/^\S+@\S+\.\S+$/.test(email) || password.length < 12) {
+      return res.status(400).json({ error: 'Indica e-mail válido e palavra-passe com pelo menos 12 caracteres.' });
+    }
+    const r = await q('INSERT INTO admins (email, password_hash) VALUES ($1, $2) ON CONFLICT (email) DO NOTHING RETURNING id, email, created_at', [email, await bcrypt.hash(password, 12)]);
+    if (!r.length) return res.status(409).json({ error: 'Já existe uma conta com esse e-mail.' });
+    res.status(201).json(r[0]);
+  } catch (e) {
+    res.status(500).json({ error: 'Não foi possível criar administrador.' });
+  }
+});
+
+app.delete('/api/admin/admins/:id', admin, async (req, res) => {
+  try {
+    if (String(req.params.id) === String(req.admin.id)) return res.status(400).json({ error: 'Não podes eliminar a tua própria conta enquanto estás ligado.' });
+    const n = await q('SELECT count(*)::int AS n FROM admins');
+    if (n[0].n <= 1) return res.status(400).json({ error: 'Tem de existir pelo menos um administrador.' });
+    await q('DELETE FROM admins WHERE id = $1', [Number(req.params.id)]);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Não foi possível remover o administrador.' });
+  }
+});
+
+app.use((err, _req, res, _next) => {
+  console.error(err);
+  res.status(500).json({ error: 'Erro inesperado no servidor.' });
+});
+
+module.exports = app;0
