@@ -223,15 +223,8 @@ img, video, iframe {
 }
 
 .brand-logo {
-    width: 92px;
-    height: 48px;
-    object-fit: contain;
-    display: block;
-    background: #fff;
+    width: 122px;
     padding: 3px;
-    border: 1px solid rgba(15, 70, 120, .12);
-    border-radius: 8px;
-    flex: 0 0 auto;
 }
 
 .nav {
