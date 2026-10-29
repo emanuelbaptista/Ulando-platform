@@ -334,12 +334,10 @@ img, video, iframe {
 }
 
 .brand-logo {
-    width: 140px;          /* Tamanho ideal destacado (ajusta entre 130px e 160px se preferires) */
-    max-width: 100%;       /* Garante que não estoura em ecras menores */
-    height: auto;          /* Evita que a imagem fique esticada ou deformada */
-    object-fit: contain;   /* Mantém a clareza e proporção correta do logo */
+    width: clamp(100px, 12vw, 150px); /* Varia de forma fluida entre 100px (telemóveis) e 150px (PCs) */
+    height: auto;                     /* Mantém sempre a proporção correta, evitando distorções */
+    object-fit: contain;              /* Preserva a nitidez da imagem */
     display: block;
-    padding: 2px;
 }
 
 .nav {
