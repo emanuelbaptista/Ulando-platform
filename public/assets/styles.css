@@ -65,6 +65,117 @@ h1 {
     font-weight: 800;
 }
 
+/* ==========================================
+   Estilos para a Barra de Pesquisa Global
+   ========================================== */
+.global-search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50px; /* Mais arredondado */
+  padding: 10px 20px;
+  max-width: 600px;
+  width: 100%;
+  backdrop-filter: blur(10px);
+}
+
+.global-search input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 1rem;
+  outline: none;
+}
+
+.global-search input::placeholder {
+  color: #91a4bb;
+}
+
+.global-search button {
+  background-color: #0066cc;
+  color: #ffffff;
+  border: none;
+  border-radius: 30px; /* Botão também arredondado para combinar */
+  padding: 10px 22px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.global-search button:hover {
+  background-color: #0052a3;
+}
+
+.global-search-results {
+  margin-top: 10px;
+  background: #1a2332;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 15px;
+}
+
+.global-search-results.hidden {
+  display: none;
+}
+
+/* ==========================================
+   Estilos para os Indicadores / Estatísticas
+   ========================================== */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 24px;
+  margin-top: 40px;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center; /* Alinha perfeitamente o ícone com o bloco de texto ao lado */
+  gap: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 24px;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.stat-icon {
+  font-size: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #60a5fa;
+  flex-shrink: 0; /* Impede que o ícone deforma caso o espaço diminua */
+}
+
+.stat-card > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 0.95rem;
+  color: #94a3b8;
+  margin-top: 4px;
+  display: block;
+}
+
 h2 {
     font-size: clamp(2rem, 3.5vw, 3.25rem);
     font-weight: 800;
@@ -223,7 +334,8 @@ img, video, iframe {
 }
 
 .brand-logo {
-    width: 122px;
+    width: 95px;
+    height: 50px;
     padding: 3px;
 }
 
