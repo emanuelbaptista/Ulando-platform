@@ -1253,3 +1253,36 @@ img, video, iframe {
         font-size: clamp(2.2rem, 9vw, 3rem);
     }
 }
+
+/* ==========================================
+   Media Queries para Telemóveis Muito Pequenos (iPhone SE, etc.)
+   ========================================== */
+@media (max-width: 480px) {
+  .global-search {
+    padding: 6px 12px;
+    border-radius: 25px; /* Caixas ligeiramente menos arredondadas em ecrãs muito pequenos para ganhar espaço */
+  }
+
+  .global-search input {
+    font-size: 0.85rem;
+  }
+
+  .global-search button {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    border-radius: 20px;
+  }
+
+  .stats {
+    grid-template-columns: 1fr; /* Os 3 containers ficam um em cima do outro ocupando a largura toda do telemóvel */
+    gap: 12px;
+  }
+
+  .stat-card {
+    padding: 14px;
+  }
+
+  .stat-number {
+    font-size: 1.5rem;
+  }
+}
