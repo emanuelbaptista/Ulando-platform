@@ -334,8 +334,9 @@ img, video, iframe {
 }
 
 .brand-logo {
-    width: 95px;
-    height: 50px;
+    width: 122px;       /* Podes ajustar a largura desejada aqui */
+    height: auto;       /* Mantém a proporção correta automaticamente */
+    object-fit: contain;
     padding: 3px;
 }
 
