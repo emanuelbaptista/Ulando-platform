@@ -71,15 +71,7 @@ const localApi = async (url, opts = {}) => {
   throw new Error('Função indisponível.');
 };
 
-async function api(url, opts = {}) {
-  if (localMode) return localApi(url, opts);
-  const headers = { ...(opts.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }), ...(opts.headers || {}) };
-  const r = await fetch(url, { credentials: 'same-origin', ...opts, headers });
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(data.error || data.message || 'Não foi possível concluir a operação.');
-  return data;
-}
-
+const headers = opts.body instanceof FormData ? {} : { 'Content-Type': 'application/json' };
 function message(text) { if (notice) { notice.textContent = text; notice.classList.remove('hidden'); } }
 function showDashboard(admin) {
   loginPanel?.classList.add('hidden');
