@@ -31,8 +31,10 @@ const PUBLIC = path.join(ROOT, "public");
 const UPLOADS = path.join(ROOT, "uploads");
 const DATA = path.join(ROOT, "data");
 
-fs.mkdirSync(UPLOADS, { recursive: true });
-fs.mkdirSync(DATA, { recursive: true });
+if (!process.env.VERCEL) {
+  fs.mkdirSync(UPLOADS, { recursive: true });
+  fs.mkdirSync(DATA, { recursive: true });
+}
 
 // Ficheiros estáticos
 app.use(express.static(PUBLIC));
