@@ -5,6 +5,7 @@ const bcrypt = require("bcryptjs");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const multer = require("multer");
+const os = require("os");
 const path = require("path");
 const fs = require("fs");
 const crypto = require("crypto");
@@ -43,7 +44,7 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(PUBLIC, "index.html"));
 });
 
-// Array com os 4 administradores configurados no .env
+// Array com os administradores configurados no .env
 const admins = [
   { email: process.env.ADMIN_EMAIL, password: process.env.ADMIN_PASSWORD },
   { email: process.env.ADMIN_EMAIL_2, password: process.env.ADMIN_PASSWORD_2 },
@@ -59,11 +60,11 @@ app.post('/api/admin/login', (req, res) => {
     return res.status(400).json({ error: 'Email e palavra-passe são obrigatórios.' });
   }
 
-  // Valida se as credenciais coincidem com qualquer um dos 4 admins do .env
+  // Valida se as credenciais coincidem com qualquer um dos admins do .env
   const isValidAdmin = admins.some(
-    admin => admin.email && admin.password && 
-             admin.email.toLowerCase() === email.toLowerCase().trim() && 
-             admin.password === password
+    admin => admin.email && admin.password &&
+      admin.email.toLowerCase() === email.toLowerCase().trim() &&
+      admin.password === password
   );
 
   if (isValidAdmin) {
@@ -79,19 +80,8 @@ if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.includes("MUDA-EST
   console.warn("AVISO: define um SESSION_SECRET forte no ficheiro .env antes de publicar.");
 }
 
-// Iniciar o servidor localmente ou exportar para o Vercel
-if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
-  app.listen(PORT, () => {
-    console.log(`Servidor Ulanda a correr na porta ${PORT}`);
-  });
-}
-
-// OBRIGATÓRIO para o Vercel conseguir executar o Express como Serverless Function
-module.exports = app;
-
-
-// Configuração do multer para guardar os ficheiros na pasta uploads
-const upload = multer({ dest: 'uploads/' });
+// Configuração do multer a usar a pasta temporária para o Vercel
+const upload = multer({ dest: os.tmpdir() });
 
 // Rota para processar o upload no painel de administração
 app.post('/api/admin/upload', upload.single('file'), (req, res) => {
@@ -117,5 +107,5 @@ if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
   });
 }
 
-// OBRIGATÓRIO para o Vercel conseguir executar o Express como Serverless Function
+// OBRIGATÓRIO: Esta tem de ser SEMPRE a última linha absoluta do ficheiro
 module.exports = app;
