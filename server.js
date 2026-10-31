@@ -88,3 +88,34 @@ if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
 
 // OBRIGATÓRIO para o Vercel conseguir executar o Express como Serverless Function
 module.exports = app;
+
+
+// Configuração do multer para guardar os ficheiros na pasta uploads
+const upload = multer({ dest: 'uploads/' });
+
+// Rota para processar o upload no painel de administração
+app.post('/api/admin/upload', upload.single('file'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Nenhum ficheiro enviado.' });
+    }
+    return res.json({ 
+      success: true, 
+      message: 'Ficheiro carregado com sucesso!', 
+      filename: req.file.filename,
+      path: `/uploads/${req.file.filename}` 
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Erro ao processar o upload.' });
+  }
+});
+
+// Iniciar o servidor localmente ou exportar para o Vercel
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`Servidor Ulanda a correr na porta ${PORT}`);
+  });
+}
+
+// OBRIGATÓRIO para o Vercel conseguir executar o Express como Serverless Function
+module.exports = app;
