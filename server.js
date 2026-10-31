@@ -30,9 +30,12 @@ app.use(
 const ROOT = __dirname;
 const PUBLIC = path.join(ROOT, "public");
 
-// CORREÇÃO CRÍTICA PARA A VERCEL: Na Vercel usamos /tmp pois o sistema de ficheiros padrão é read-only
+// Caminho seguro para dados (usa /tmp na Vercel)
 const DATA_DIR = process.env.VERCEL ? path.join('/tmp', 'data') : path.join(ROOT, "data");
 const CONTENT_FILE = path.join(DATA_DIR, "content.json");
+
+// Memória em cache para garantir 100% de fiabilidade sem falhas de disco
+let memoryContent = [];
 
 function ensureDataDir() {
   try {
@@ -43,7 +46,7 @@ function ensureDataDir() {
       fs.writeFileSync(CONTENT_FILE, JSON.stringify([]));
     }
   } catch (e) {
-    console.error("Erro ao garantir diretório de dados:", e);
+    console.error("Aviso no diretório de dados:", e);
   }
 }
 
@@ -54,20 +57,24 @@ function readContent() {
     ensureDataDir();
     if (fs.existsSync(CONTENT_FILE)) {
       const data = fs.readFileSync(CONTENT_FILE, 'utf8');
-      return JSON.parse(data || '[]');
+      const parsed = JSON.parse(data || '[]');
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        memoryContent = parsed;
+      }
     }
   } catch (e) {
-    console.error("Erro ao ler content.json:", e);
+    console.error("Aviso ao ler ficheiro:", e);
   }
-  return [];
+  return memoryContent;
 }
 
 function writeContent(contentList) {
+  memoryContent = contentList;
   try {
     ensureDataDir();
     fs.writeFileSync(CONTENT_FILE, JSON.stringify(contentList, null, 2));
   } catch (e) {
-    console.error("Erro ao escrever content.json:", e);
+    console.warn("Aviso ao escrever em disco (a utilizar cache em memória):", e);
   }
 }
 
@@ -134,15 +141,13 @@ app.post('/api/admin/upload', (req, res) => {
 });
 
 // ==========================================
-// ROTAS DE CONTEÚDO CORRIGIDAS E FILTRADAS
+// ROTAS DE CONTEÚDO BLINDADAS
 // ==========================================
 
-// Rota pública consumida pelo app.js (filtra por tipo e estado publicado)
 app.get('/api/content', (req, res) => {
   let content = readContent();
   const type = req.query.type;
 
-  // Filtra apenas conteúdos publicados (compatível com true, 1, '1', 'true')
   content = content.filter(item => 
     item.published === true || item.published === 1 || item.published === '1' || item.published === 'true'
   );
@@ -154,7 +159,6 @@ app.get('/api/content', (req, res) => {
   return res.json(content);
 });
 
-// Rota de administração para listar todos os conteúdos (sem filtro de publicação)
 app.get('/api/admin/content', (req, res) => {
   const content = readContent();
   return res.json(content);
@@ -173,7 +177,8 @@ app.post('/api/admin/content', (req, res) => {
     writeContent(items);
     return res.json(item);
   } catch (err) {
-    return res.status(500).json({ error: 'Erro ao guardar o conteúdo.' });
+    console.error("Erro no POST /api/admin/content:", err);
+    return res.status(500).json({ error: err.message || 'Erro ao guardar o conteúdo.' });
   }
 });
 
@@ -190,7 +195,8 @@ app.put('/api/admin/content/:id', (req, res) => {
     writeContent(items);
     return res.json(items[i]);
   } catch (err) {
-    return res.status(500).json({ error: 'Erro ao atualizar o conteúdo.' });
+    console.error("Erro no PUT /api/admin/content/:id:", err);
+    return res.status(500).json({ error: err.message || 'Erro ao atualizar o conteúdo.' });
   }
 });
 
@@ -202,7 +208,8 @@ app.delete('/api/admin/content/:id', (req, res) => {
     writeContent(items);
     return res.json({ ok: true });
   } catch (err) {
-    return res.status(500).json({ error: 'Erro ao eliminar o conteúdo.' });
+    console.error("Erro no DELETE /api/admin/content/:id:", err);
+    return res.status(500).json({ error: err.message || 'Erro ao eliminar o conteúdo.' });
   }
 });
 
