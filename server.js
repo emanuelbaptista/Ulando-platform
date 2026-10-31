@@ -13,13 +13,13 @@ const crypto = require("crypto");
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
 
-// OBRIGATÓRIO PARA O VERCEL: Permite que os cookies seguros funcionem atrás do proxy
+// OBRIGATÓRIO PARA O VERCEL: Confiar no proxy para sessões seguras HTTPS
 app.set('trust proxy', 1);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Configuração da Sessão otimizada para ambiente de produção (Vercel)
+// Configuração da Sessão otimizada para o Vercel
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "ulandu-local-dev-secret",
@@ -36,13 +36,16 @@ app.use(
 
 const ROOT = __dirname;
 const PUBLIC = path.join(ROOT, "public");
-const UPLOADS = path.join(ROOT, "uploads");
-const DATA = path.join(ROOT, "data");
+const DATA_DIR = path.join(ROOT, "data");
+const CONTENT_FILE = path.join(DATA_DIR, "content.json");
 
+// Garantir que a pasta data existe localmente
 if (!process.env.VERCEL) {
   try {
-    fs.mkdirSync(UPLOADS, { recursive: true });
-    fs.mkdirSync(DATA, { recursive: true });
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    if (!fs.existsSync(CONTENT_FILE)) {
+      fs.writeFileSync(CONTENT_FILE, JSON.stringify([]));
+    }
   } catch (e) {
     console.error("Erro ao criar pastas locais:", e);
   }
@@ -86,7 +89,7 @@ app.post('/api/admin/login', (req, res) => {
   }
 });
 
-// Middleware robusto de proteção de rotas administrativas
+// Middleware de proteção de rotas administrativas
 function requireAdmin(req, res, next) {
   if (req.session && (req.session.user || req.session.isAdmin)) {
     return next();
@@ -94,7 +97,7 @@ function requireAdmin(req, res, next) {
   return res.status(403).json({ error: 'Acesso negado. Faça login novamente.' });
 }
 
-// Configuração do multer em memória para evitar erros de escrita no Vercel
+// Configuração do multer em memória para o Vercel
 const upload = multer({ storage: multer.memoryStorage() });
 
 // Rota de Upload protegida
@@ -114,21 +117,73 @@ app.post('/api/admin/upload', requireAdmin, upload.single('file'), (req, res) =>
   }
 });
 
-// Rotas de Conteúdo protegidas (GET e POST)
-app.get(['/api/admin/content', '/api/admin/content/:id'], requireAdmin, (req, res) => {
-  return res.json({ success: true, data: [] });
+// ==========================================
+// ROTAS DE CONTEÚDO COM PERSISTÊNCIA REAL
+// ==========================================
+
+// Rota pública ou protegida para o site buscar os conteúdos publicados
+app.get('/api/content', (req, res) => {
+  try {
+    if (fs.existsSync(CONTENT_FILE)) {
+      const fileData = fs.readFileSync(CONTENT_FILE, 'utf8');
+      const content = JSON.parse(fileData || '[]');
+      return res.json({ success: true, data: content });
+    }
+    return res.json({ success: true, data: [] });
+  } catch (err) {
+    return res.status(500).json({ error: 'Erro ao ler conteúdos.' });
+  }
 });
 
+// Rota GET de admin para listar conteúdos
+app.get(['/api/admin/content', '/api/admin/content/:id'], requireAdmin, (req, res) => {
+  try {
+    if (fs.existsSync(CONTENT_FILE)) {
+      const fileData = fs.readFileSync(CONTENT_FILE, 'utf8');
+      const content = JSON.parse(fileData || '[]');
+      return res.json({ success: true, data: content });
+    }
+    return res.json({ success: true, data: [] });
+  } catch (err) {
+    return res.status(500).json({ error: 'Erro ao buscar conteúdos.' });
+  }
+});
+
+// Rota POST para guardar ou atualizar o conteúdo real
 app.post(['/api/admin/content', '/api/admin/content/:id'], requireAdmin, (req, res) => {
   try {
-    const contentData = req.body;
-    return res.json({ success: true, message: 'Conteúdo guardado com sucesso!' });
+    const newContent = req.body;
+    let contentList = [];
+
+    if (fs.existsSync(CONTENT_FILE)) {
+      const fileData = fs.readFileSync(CONTENT_FILE, 'utf8');
+      contentList = JSON.parse(fileData || '[]');
+    }
+
+    // Adiciona identificador único se não existir
+    if (!newContent.id) {
+      newContent.id = Date.now().toString();
+    }
+
+    // Verifica se já existe para atualizar ou adicionar novo
+    const index = contentList.findIndex(item => item.id === newContent.id);
+    if (index >= 0) {
+      contentList[index] = { ...contentList[index], ...newContent };
+    } else {
+      contentList.unshift(newContent); // Adiciona no início da lista
+    }
+
+    // Grava de volta no ficheiro JSON
+    fs.writeFileSync(CONTENT_FILE, JSON.stringify(contentList, null, 2));
+
+    return res.json({ success: true, message: 'Conteúdo guardado com sucesso!', data: newContent });
   } catch (err) {
+    console.error("Erro ao guardar conteúdo:", err);
     return res.status(500).json({ error: 'Erro ao guardar o conteúdo.' });
   }
 });
 
-// Iniciar servidor localmente (ignorado pelo Vercel em produção)
+// Iniciar servidor localmente
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
   app.listen(PORT, () => {
     console.log(`Servidor a correr na porta ${PORT}`);
