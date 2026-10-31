@@ -78,12 +78,11 @@ async function api(url, opts = {}) {
     ...(opts.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
     ...(opts.headers || {})
   };
-
-  const r = await fetch(url, {
-    credentials: 'same-origin',
-    ...opts,
-    headers
-  });
+const r = await fetch(url, {
+  credentials: 'same-origin',
+  ...opts,
+  headers: headers
+});
 
   const data = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(data.error || data.message || 'Não foi possível concluir a operação.');
