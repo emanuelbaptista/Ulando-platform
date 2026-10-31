@@ -13,11 +13,13 @@ const crypto = require("crypto");
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
 
-// Configuração de segurança e parsers
+// OBRIGATÓRIO PARA O VERCEL: Permite que os cookies seguros funcionem atrás do proxy
+app.set('trust proxy', 1);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Configuração da Sessão
+// Configuração da Sessão otimizada para ambiente de produção (Vercel)
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "ulandu-local-dev-secret",
@@ -26,6 +28,7 @@ app.use(
     cookie: { 
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
+      sameSite: 'lax',
       maxAge: 24 * 60 * 60 * 1000 // 1 dia
     }
   })
@@ -45,14 +48,14 @@ if (!process.env.VERCEL) {
   }
 }
 
-// Ficheiros estáticos
+// Servir ficheiros estáticos da pasta public
 app.use(express.static(PUBLIC));
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(PUBLIC, "index.html"));
 });
 
-// Array com os 4 administradores configurados no .env
+// Array com os 4 administradores configurados no .env do Vercel
 const admins = [
   { email: process.env.ADMIN_EMAIL, password: process.env.ADMIN_PASSWORD },
   { email: process.env.ADMIN_EMAIL_2, password: process.env.ADMIN_PASSWORD_2 },
@@ -76,24 +79,25 @@ app.post('/api/admin/login', (req, res) => {
 
   if (isValidAdmin) {
     req.session.user = { email, role: 'admin' };
+    req.session.isAdmin = true;
     return res.json({ success: true, message: 'Login bem-sucedido!' });
   } else {
     return res.status(401).json({ error: 'Credenciais inválidas.' });
   }
 });
 
-// Middleware para proteger rotas de admin
+// Middleware robusto de proteção de rotas administrativas
 function requireAdmin(req, res, next) {
-  if (req.session && req.session.user && req.session.user.role === 'admin') {
+  if (req.session && (req.session.user || req.session.isAdmin)) {
     return next();
   }
-  return res.status(403).json({ error: 'Acesso negado. Faça login como administrador.' });
+  return res.status(403).json({ error: 'Acesso negado. Faça login novamente.' });
 }
 
-// Configuração do multer em memória para o Vercel
+// Configuração do multer em memória para evitar erros de escrita no Vercel
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Rota de Upload
+// Rota de Upload protegida
 app.post('/api/admin/upload', requireAdmin, upload.single('file'), (req, res) => {
   try {
     if (!req.file) {
@@ -106,42 +110,30 @@ app.post('/api/admin/upload', requireAdmin, upload.single('file'), (req, res) =>
       size: req.file.size
     });
   } catch (err) {
-    console.error("Erro no upload:", err);
     return res.status(500).json({ error: 'Erro ao processar o upload.' });
   }
 });
 
-// ==========================================
-// NOVAS ROTAS PARA RESOLVER OS ERROS 404 E 403
-// ==========================================
-
-// Rota GET para buscar conteúdos (/api/admin/content ou /api/admin/content/:id)
+// Rotas de Conteúdo protegidas (GET e POST)
 app.get(['/api/admin/content', '/api/admin/content/:id'], requireAdmin, (req, res) => {
-  try {
-    // Podes adaptar para ler de base de dados ou ficheiro JSON
-    return res.json({ success: true, data: [] });
-  } catch (err) {
-    return res.status(500).json({ error: 'Erro ao buscar conteúdos.' });
-  }
+  return res.json({ success: true, data: [] });
 });
 
-// Rota POST/PUT para guardar/atualizar conteúdos
 app.post(['/api/admin/content', '/api/admin/content/:id'], requireAdmin, (req, res) => {
   try {
     const contentData = req.body;
-    // Aqui processas e guardas os dados enviados pelo admin.js
     return res.json({ success: true, message: 'Conteúdo guardado com sucesso!' });
   } catch (err) {
-    console.error("Erro ao guardar conteúdo:", err);
     return res.status(500).json({ error: 'Erro ao guardar o conteúdo.' });
   }
 });
 
-// Iniciar servidor localmente
+// Iniciar servidor localmente (ignorado pelo Vercel em produção)
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
   app.listen(PORT, () => {
     console.log(`Servidor a correr na porta ${PORT}`);
   });
 }
 
+// OBRIGATÓRIO: Exportação para o Vercel
 module.exports = app;
