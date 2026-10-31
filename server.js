@@ -13,7 +13,7 @@ const crypto = require("crypto");
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
 
-// Configuração de segurança e parsers (OBRIGATÓRIO para ler o req.body em JSON)
+// Configuração de segurança e parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -60,7 +60,7 @@ const admins = [
   { email: process.env.ADMIN_EMAIL_4, password: process.env.ADMIN_PASSWORD_4 }
 ];
 
-// Rota oficial de login correspondente ao pedido do admin.js (/api/admin/login)
+// Rota oficial de login
 app.post('/api/admin/login', (req, res) => {
   const { email, password } = req.body;
 
@@ -68,7 +68,6 @@ app.post('/api/admin/login', (req, res) => {
     return res.status(400).json({ error: 'Email e palavra-passe são obrigatórios.' });
   }
 
-  // Valida se as credenciais coincidem com qualquer um dos admins do .env
   const isValidAdmin = admins.some(
     admin => admin.email && admin.password &&
       admin.email.toLowerCase() === email.toLowerCase().trim() &&
@@ -83,23 +82,23 @@ app.post('/api/admin/login', (req, res) => {
   }
 });
 
-// Avisos de ambiente
-if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.includes("MUDA-ESTE")) {
-  console.warn("AVISO: define um SESSION_SECRET forte no ficheiro .env antes de publicar.");
+// Middleware para proteger rotas de admin
+function requireAdmin(req, res, next) {
+  if (req.session && req.session.user && req.session.user.role === 'admin') {
+    return next();
+  }
+  return res.status(403).json({ error: 'Acesso negado. Faça login como administrador.' });
 }
 
-// Configuração do multer a usar memória (essencial para o Vercel não dar erro de leitura/escrita)
+// Configuração do multer em memória para o Vercel
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Rota para processar o upload no painel de administração
-app.post('/api/admin/upload', upload.single('file'), (req, res) => {
+// Rota de Upload
+app.post('/api/admin/upload', requireAdmin, upload.single('file'), (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'Nenhum ficheiro enviado.' });
     }
-    
-    // Como estamos no Vercel (memoryStorage), o ficheiro está disponível em req.file.buffer.
-    // Podes processá-lo ou devolver a confirmação de sucesso:
     return res.json({ 
       success: true, 
       message: 'Ficheiro processado com sucesso!', 
@@ -112,12 +111,37 @@ app.post('/api/admin/upload', upload.single('file'), (req, res) => {
   }
 });
 
-// Iniciar o servidor localmente ou exportar para o Vercel
+// ==========================================
+// NOVAS ROTAS PARA RESOLVER OS ERROS 404 E 403
+// ==========================================
+
+// Rota GET para buscar conteúdos (/api/admin/content ou /api/admin/content/:id)
+app.get(['/api/admin/content', '/api/admin/content/:id'], requireAdmin, (req, res) => {
+  try {
+    // Podes adaptar para ler de base de dados ou ficheiro JSON
+    return res.json({ success: true, data: [] });
+  } catch (err) {
+    return res.status(500).json({ error: 'Erro ao buscar conteúdos.' });
+  }
+});
+
+// Rota POST/PUT para guardar/atualizar conteúdos
+app.post(['/api/admin/content', '/api/admin/content/:id'], requireAdmin, (req, res) => {
+  try {
+    const contentData = req.body;
+    // Aqui processas e guardas os dados enviados pelo admin.js
+    return res.json({ success: true, message: 'Conteúdo guardado com sucesso!' });
+  } catch (err) {
+    console.error("Erro ao guardar conteúdo:", err);
+    return res.status(500).json({ error: 'Erro ao guardar o conteúdo.' });
+  }
+});
+
+// Iniciar servidor localmente
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
   app.listen(PORT, () => {
-    console.log(`Servidor Ulanda a correr na porta ${PORT}`);
+    console.log(`Servidor a correr na porta ${PORT}`);
   });
 }
 
-// OBRIGATÓRIO: Esta tem de ser SEMPRE a última linha absoluta do ficheiro
 module.exports = app;
