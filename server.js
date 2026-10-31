@@ -79,7 +79,12 @@ if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.includes("MUDA-EST
   console.warn("AVISO: define um SESSION_SECRET forte no ficheiro .env antes de publicar.");
 }
 
-// Iniciar o servidor por último
-app.listen(PORT, () => {
-  console.log(`Servidor Ulanda a correr na porta ${PORT}`);
-});
+// Iniciar o servidor localmente ou exportar para o Vercel
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`Servidor Ulanda a correr na porta ${PORT}`);
+  });
+}
+
+// OBRIGATÓRIO para o Vercel conseguir executar o Express como Serverless Function
+module.exports = app;
