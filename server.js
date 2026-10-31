@@ -17,7 +17,7 @@ const PORT = Number(process.env.PORT || 3000);
 // Configuração de segurança e parsers (OBRIGATÓRIO para ler o req.body em JSON)
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
+app.use(express.static(path.join(__dirname, 'public')));
 // Configuração da Sessão
 app.use(
   session({
