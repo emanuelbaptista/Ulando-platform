@@ -47,13 +47,9 @@ if (!process.env.VERCEL) {
   }
 }
 
-// Função auxiliar para ler conteúdos de forma segura (compatível com Vercel)
+// Função auxiliar para ler conteúdos
 function readContent() {
   try {
-    if (process.env.VERCEL) {
-      // Em ambiente serverless, se não houver ficheiro físico, retornamos array em memória ou vazio
-      if (!fs.existsSync(CONTENT_FILE)) return [];
-    }
     if (fs.existsSync(CONTENT_FILE)) {
       const data = fs.readFileSync(CONTENT_FILE, 'utf8');
       return JSON.parse(data || '[]');
@@ -72,18 +68,17 @@ function writeContent(contentList) {
     }
     fs.writeFileSync(CONTENT_FILE, JSON.stringify(contentList, null, 2));
   } catch (e) {
-    console.error("Erro ao escrever content.json (Vercel read-only filesystem):", e);
+    console.error("Erro ao escrever content.json:", e);
   }
 }
 
-// Servir ficheiros estáticos
 app.use(express.static(PUBLIC));
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(PUBLIC, "index.html"));
 });
 
-// Array com os 4 administradores
+// Array com os 4 administradores configurados no .env
 const admins = [
   { email: process.env.ADMIN_EMAIL, password: process.env.ADMIN_PASSWORD },
   { email: process.env.ADMIN_EMAIL_2, password: process.env.ADMIN_PASSWORD_2 },
@@ -108,95 +103,114 @@ app.post('/api/admin/login', (req, res) => {
   if (isValidAdmin) {
     req.session.user = { email, role: 'admin' };
     req.session.isAdmin = true;
-    return res.json({ success: true, message: 'Login bem-sucedido!' });
+    return res.json({ ok: true, admin: { email } });
   } else {
-    return res.status(401).json({ error: 'Credenciais inválidas.' });
+    return res.status(401).json({ error: 'E-mail ou palavra-passe incorretos.' });
   }
 });
 
-// Rota para resolver o erro 404 em /api/admin/me
+app.post('/api/admin/logout', (req, res) => {
+  req.session.destroy();
+  return res.json({ ok: true });
+});
+
+// Rota para validar sessão (/api/admin/me) esperada pelo admin.js
 app.get('/api/admin/me', (req, res) => {
   if (req.session && (req.session.user || req.session.isAdmin)) {
-    return res.json({ success: true, user: req.session.user || { role: 'admin' } });
+    return res.json({ authenticated: true, admin: req.session.user || { email: 'admin@ulando.online' } });
   }
-  return res.status(401).json({ success: false, error: 'Não autenticado.' });
+  return res.json({ authenticated: false });
 });
-
-// Middleware de Admin tolerante
-function requireAdmin(req, res, next) {
-  return next(); 
-}
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-app.post('/api/admin/upload', requireAdmin, upload.single('file'), (req, res) => {
+app.post('/api/admin/upload', (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'Nenhum ficheiro enviado.' });
-    }
-    return res.json({ 
-      success: true, 
-      message: 'Ficheiro processado com sucesso!', 
-      filename: req.file.originalname,
-      path: `/uploads/${req.file.originalname}`,
-      size: req.file.size
+    // Tratamento adaptado para receber o ficheiro via multer ou body parser
+    upload.single('file')(req, res, (err) => {
+      if (err || !req.file) {
+        return res.status(400).json({ error: 'Escolhe primeiro um ficheiro.' });
+      }
+      // Converte o buffer para base64 para garantir compatibilidade total na exibição imediata
+      const b64 = Buffer.from(req.file.buffer).toString('base64');
+      const mime = req.file.mimetype;
+      const dataUrl = `data:${mime};base64,${b64}`;
+      return res.json({ url: dataUrl, path: dataUrl, filename: req.file.originalname });
     });
   } catch (err) {
     return res.status(500).json({ error: 'Erro ao processar o upload.' });
   }
 });
 
-// Rota pública para o site buscar os conteúdos
+// ==========================================
+// ROTAS DE CONTEÚDO (Compatíveis com admin.js)
+// ==========================================
+
+// Rota pública para o site buscar as notícias/conteúdos
 app.get('/api/content', (req, res) => {
   const content = readContent();
-  return res.json({ success: true, data: content });
+  // Retorna diretamente um array ou objeto compatível com o app.js público
+  return res.json(content);
 });
 
-// Rota de administração para listar conteúdos
-app.get(['/api/admin/content', '/api/admin/content/:id'], requireAdmin, (req, res) => {
+// Listar conteúdos no painel admin (retorna o array direto que o admin.js espera)
+app.get('/api/admin/content', (req, res) => {
   const content = readContent();
-  return res.json({ success: true, data: content });
+  return res.json(content);
 });
 
-// Rota para criar ou atualizar conteúdo
-app.post(['/api/admin/content', '/api/admin/content/:id'], requireAdmin, (req, res) => {
+// Criar novo conteúdo (POST)
+app.post('/api/admin/content', (req, res) => {
   try {
-    const newContent = req.body;
-    let contentList = readContent();
-
-    if (!newContent.id) {
-      newContent.id = Date.now().toString();
-    }
-
-    // Garante propriedades padrão exigidas pelo frontend
-    newContent.createdAt = newContent.createdAt || new Date().toISOString();
-
-    const index = contentList.findIndex(item => String(item.id) === String(newContent.id));
-    if (index >= 0) {
-      contentList[index] = { ...contentList[index], ...newContent };
-    } else {
-      contentList.unshift(newContent);
-    }
-
-    writeContent(contentList);
-
-    return res.json({ success: true, message: 'Conteúdo guardado com sucesso!', data: newContent });
+    const d = req.body;
+    let items = readContent();
+    
+    const item = { 
+      ...d, 
+      id: Date.now().toString(), 
+      created_at: new Date().toISOString() 
+    };
+    
+    items.unshift(item);
+    writeContent(items);
+    
+    return res.json(item);
   } catch (err) {
-    console.error("Erro ao guardar conteúdo:", err);
     return res.status(500).json({ error: 'Erro ao guardar o conteúdo.' });
   }
 });
 
-// Rota para eliminar conteúdo
-app.delete(['/api/admin/content/:id', '/api/admin/content'], requireAdmin, (req, res) => {
+// Atualizar conteúdo existente (PUT)
+app.put('/api/admin/content/:id', (req, res) => {
   try {
-    const id = req.params.id || req.body.id;
-    let contentList = readContent();
+    const id = req.params.id;
+    const d = req.body;
+    let items = readContent();
     
-    contentList = contentList.filter(item => String(item.id) !== String(id));
-    writeContent(contentList);
+    const i = items.findIndex(x => String(x.id) === String(id));
+    if (i < 0) {
+      return res.status(404).json({ error: 'Conteúdo não encontrado.' });
+    }
+    
+    items[i] = { ...items[i], ...d };
+    writeContent(items);
+    
+    return res.json(items[i]);
+  } catch (err) {
+    return res.status(500).json({ error: 'Erro ao atualizar o conteúdo.' });
+  }
+});
 
-    return res.json({ success: true, message: 'Conteúdo eliminado com sucesso!' });
+// Eliminar conteúdo (DELETE)
+app.delete('/api/admin/content/:id', (req, res) => {
+  try {
+    const id = req.params.id;
+    let items = readContent();
+    
+    items = items.filter(x => String(x.id) !== String(id));
+    writeContent(items);
+    
+    return res.json({ ok: true });
   } catch (err) {
     return res.status(500).json({ error: 'Erro ao eliminar o conteúdo.' });
   }
