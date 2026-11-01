@@ -768,3 +768,30 @@ img, video, iframe {
 [data-theme="light"] .field label {
     color: #174b31;
 }
+
+
+/* --- CORREÇÕES CIRÚRGICAS FINAIS --- */
+
+/* 1. Remove barra de rolagem horizontal no mobile */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden !important;
+}
+
+/* 2. Reduz e ajusta o logótipo no desktop para não ficar gigante */
+.brand-logo {
+  width: auto !important;
+  max-height: 36px !important;
+  object-fit: contain;
+  display: block;
+}
+
+/* 3. Desce o conteúdo nas páginas internas (Diálogos e Fórum CIAI) para não colar ao header */
+.page-hero {
+  padding-top: 50px !important;
+  margin-top: 0 !important;
+}
+
+main {
+  padding-top: 15px;
+}
