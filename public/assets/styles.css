@@ -736,15 +736,14 @@ img {
 }
 
 /* ==========================================
-   IMAGENS DOS CARTÕES
+   IMAGENS DOS CARTÕES (CORRIGIDO PARA MOSTRAR A IMAGEM INTEIRA)
    ========================================== */
 
 .card-image {
     position: relative;
     display: block;
     width: 100%;
-    aspect-ratio: 4 / 3;
-    min-height: 0;
+    height: auto;
     overflow: hidden;
     isolation: isolate;
     background: var(--surface2);
@@ -753,26 +752,24 @@ img {
 
 .card-image img,
 .card .card-image img {
-    position: absolute;
-    inset: 0;
+    position: relative;
+    inset: auto;
     display: block;
     width: 100%;
-    height: 100%;
-    max-width: none;
-    object-fit: cover;
-    object-position: center;
+    height: auto;
+    max-width: 100%;
+    object-fit: contain;
     background: var(--surface2);
     transition: transform .5s ease;
 }
 
 .card:hover .card-image img {
-    transform: scale(1.04);
+    transform: scale(1.02);
 }
 
 .card img {
     display: block;
     max-width: 100%;
-    object-fit: cover;
 }
 
 .card-body {
@@ -1622,8 +1619,6 @@ img {
    MELHORIAS VISUAIS — APENAS MODO CLARO
    ========================================= */
 
-/* Header verde apenas no modo claro */
-
 [data-theme="light"] .site-header {
     background: #116b40 !important;
     border-bottom: 1px solid #0d5633;
@@ -1650,8 +1645,6 @@ img {
     border-color: #d5eadc;
 }
 
-/* Textos dentro dos containers */
-
 [data-theme="light"] .service-card h3,
 [data-theme="light"] .card h3,
 [data-theme="light"] .panel h2,
@@ -1667,8 +1660,6 @@ img {
 [data-theme="light"] .stat span {
     color: #385c47;
 }
-
-/* Containers e estatísticas */
 
 [data-theme="light"] .service-card,
 [data-theme="light"] .card,
@@ -1686,8 +1677,6 @@ img {
 [data-theme="light"] .stat-card {
     box-shadow: 0 6px 20px rgba(17, 90, 45, .06);
 }
-
-/* Barra de pesquisa */
 
 [data-theme="light"] .global-search {
     background: #ffffff;
@@ -1725,8 +1714,6 @@ img {
     border-color: #d5e6da;
 }
 
-/* Menu no telemóvel */
-
 @media (max-width: 1180px) {
     [data-theme="light"] .site-header .nav {
         background: #116b40;
@@ -1745,8 +1732,6 @@ img {
     }
 }
 
-/* Campos de formulários */
-
 [data-theme="light"] .field input,
 [data-theme="light"] .field textarea,
 [data-theme="light"] .field select {
@@ -1760,95 +1745,8 @@ img {
 }
 
 /* ==========================================
-   CORREÇÃO DEFINITIVA DOS CONTAINERS DE IMAGEM
-   ========================================== */
-
-/* Impede que os elementos de imagem ultrapassem a página */
-
-.card,
-.service-card,
-.panel,
-.photo-frame {
-    min-width: 0;
-    max-width: 100%;
-}
-
-/* Cada imagem de cartão fica limitada ao seu próprio container */
-
-.card-image {
-    position: relative !important;
-    display: block;
-    width: 100%;
-    height: auto;
-    min-height: 0;
-    aspect-ratio: 4 / 3;
-    overflow: hidden;
-    isolation: isolate;
-    contain: layout paint;
-}
-
-/* A imagem ocupa apenas o espaço do container */
-
-.card-image > img {
-    position: absolute !important;
-    inset: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    max-width: none !important;
-    min-width: 0;
-    display: block;
-    object-fit: cover;
-    object-position: center;
-    z-index: 0;
-}
-
-/* Evita que o efeito de zoom ultrapasse os limites */
-
-.card-image {
-    overflow: hidden;
-}
-
-/* Mantém o conteúdo do cartão separado da imagem */
-
-.card-body {
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    min-width: 0;
-    background: var(--surface);
-}
-
-/* Mantém as imagens dos cartões dentro do seu espaço */
-
-.card-image img {
-    transform-origin: center center;
-    will-change: transform;
-}
-
-/* Não permite que imagens causem deslocamento horizontal */
-
-.card img,
-.photo-frame img {
-    max-width: none;
-}
-
-/* Corrige o comportamento das imagens no modo claro */
-
-[data-theme="light"] .card-image {
-    background: #e5f2e9;
-}
-
-/* Corrige o comportamento das imagens no modo escuro */
-
-[data-theme="dark"] .card-image {
-    background: #103766;
-}
-
-/* ==========================================
    PROTEÇÃO DO CABEÇALHO CONTRA SOBREPOSIÇÕES
    ========================================== */
-
-/* O cabeçalho mantém a sua posição superior */
 
 .site-header {
     position: sticky;
@@ -1857,27 +1755,18 @@ img {
     isolation: isolate;
 }
 
-/* O conteúdo do cabeçalho mantém-se organizado */
-
 .header-inner {
     position: relative;
     z-index: 2;
 }
 
-/* O menu mantém-se acima dos restantes elementos */
-
 .nav {
     z-index: 112;
 }
 
-/* As imagens não podem ocupar a camada do cabeçalho */
-
-.photo-frame,
-.card-image {
+.photo-frame {
     z-index: 0;
 }
-
-/* Os elementos visuais mantêm o seu próprio contexto */
 
 .hero,
 .page-hero,
@@ -1886,112 +1775,12 @@ img {
     position: relative;
 }
 
-/* Evita que os elementos internos saiam dos containers */
-
 .container,
 .section,
 .section-header,
 .section-head {
     min-width: 0;
     max-width: 100%;
-}
-
-/* ==========================================
-   CORREÇÕES DE IMAGENS EM TABLETS
-   ========================================== */
-
-@media (max-width: 820px) {
-    .card-image {
-        width: 100%;
-        aspect-ratio: 4 / 3;
-        min-height: 0;
-    }
-
-    .card-image > img {
-        width: 100% !important;
-        height: 100% !important;
-        object-fit: cover;
-    }
-
-    .photo-frame {
-        width: 100%;
-        min-height: 320px;
-        overflow: hidden;
-    }
-
-    .photo-frame > img {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .card-body {
-        padding: 20px;
-    }
-}
-
-/* ==========================================
-   CORREÇÕES DE IMAGENS EM TELEMÓVEIS
-   ========================================== */
-
-@media (max-width: 540px) {
-    .card-image {
-        aspect-ratio: 4 / 3;
-        min-height: 0;
-    }
-
-    .card-image > img {
-        width: 100% !important;
-        height: 100% !important;
-        object-fit: cover;
-    }
-
-    .photo-frame {
-        min-height: 260px;
-        width: 100%;
-    }
-
-    .photo-frame > img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .card-body {
-        padding: 18px;
-    }
-}
-
-/* ==========================================
-   CORREÇÕES PARA ECRÃS MUITO PEQUENOS
-   ========================================== */
-
-@media (max-width: 380px) {
-    .container {
-        width: calc(100% - 24px);
-    }
-
-    .card-image {
-        aspect-ratio: 4 / 3;
-    }
-
-    .card-body {
-        padding: 15px;
-    }
-
-    .photo-frame {
-        min-height: 230px;
-    }
-
-    .header-inner {
-        gap: 6px;
-    }
-
-    .brand-logo {
-        max-width: 110px;
-    }
 }
 
 /* ==========================================
@@ -2022,61 +1811,6 @@ body {
     min-width: 0;
 }
 
-/* ==========================================
-   ESTABILIDADE DAS IMAGENS E DO LAYOUT
-   ========================================== */
-
-.card-image img,
-.photo-frame img {
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-}
-
-.card-image,
-.photo-frame {
-    isolation: isolate;
-    transform: translateZ(0);
-}
-
-/* Mantém as legendas acima das imagens */
-
-.photo-caption {
-    z-index: 2;
-    pointer-events: none;
-}
-
-/* Mantém os botões clicáveis */
-
-.btn,
-.icon-btn,
-.menu-toggle,
-.filter-btn {
-    position: relative;
-    z-index: 2;
-}
-
-/* --- CORREÇÃO FINAL PARA O LAYOUT DE CARTÕES E GRID --- */
-
-/* Garante que as grelhas nas páginas internas ocupam o espaço correto e não ficam presas */
-main .container .grid-3 {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 24px;
-    width: 100%;
-}
-
-/* Responsividade para tablets e telemóveis nestas grelhas */
-@media (max-width: 900px) {
-    main .container .grid-3 {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (max-width: 540px) {
-    main .container .grid-3 {
-        grid-template-columns: 1fr;
-    }
-}
 /* ==========================================
    FIM DAS CORREÇÕES
    ========================================== */
