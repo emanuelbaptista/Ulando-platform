@@ -2055,6 +2055,28 @@ body {
     z-index: 2;
 }
 
+/* --- CORREÇÃO FINAL PARA O LAYOUT DE CARTÕES E GRID --- */
+
+/* Garante que as grelhas nas páginas internas ocupam o espaço correto e não ficam presas */
+main .container .grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+    width: 100%;
+}
+
+/* Responsividade para tablets e telemóveis nestas grelhas */
+@media (max-width: 900px) {
+    main .container .grid-3 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 540px) {
+    main .container .grid-3 {
+        grid-template-columns: 1fr;
+    }
+}
 /* ==========================================
    FIM DAS CORREÇÕES
    ========================================== */
