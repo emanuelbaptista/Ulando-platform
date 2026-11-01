@@ -385,25 +385,42 @@
       const imageWrap = document.createElement('div');
       imageWrap.className = 'card-image';
       imageWrap.style.width = '100%';
-      imageWrap.style.height = '320px'; // Altura perfeita e proporcional idêntica à referência
+      imageWrap.style.height = 'auto'; // Altura automática proporcional para nunca cortar a imagem
+      imageWrap.style.maxHeight = '420px'; // Altura máxima elegante
       imageWrap.style.overflow = 'hidden';
       imageWrap.style.position = 'relative';
+      imageWrap.style.backgroundColor = '#0b1329';
       imageWrap.style.display = 'flex';
       imageWrap.style.alignItems = 'center';
       imageWrap.style.justifyContent = 'center';
+
+      // Fundo difuso profissional para preencher harmoniosamente qualquer espaço lateral
+      const bgBlur = document.createElement('div');
+      bgBlur.style.position = 'absolute';
+      bgBlur.style.inset = '0';
+      bgBlur.style.backgroundImage = `url(${item.image})`;
+      bgBlur.style.backgroundSize = 'cover';
+      bgBlur.style.backgroundPosition = 'center';
+      bgBlur.style.filter = 'blur(16px) brightness(0.5)';
+      bgBlur.style.transform = 'scale(1.15)';
+      imageWrap.append(bgBlur);
 
       const img = document.createElement('img');
       img.loading = 'lazy';
       img.alt = escapeText(item.title) || 'Imagem da publicação';
       img.src = item.image;
+      img.style.position = 'relative';
       img.style.width = '100%';
-      img.style.height = '100%';
-      img.style.objectFit = 'cover'; // Preenche a 100% exatamente como na imagem enviada
+      img.style.height = 'auto';
+      img.style.maxHeight = '420px';
+      img.style.objectFit = 'contain'; // Garante que a imagem é 100% visível, sem cortes
+      img.style.zIndex = '1';
       img.style.display = 'block';
 
       img.addEventListener('error', () => {
         if (!img.dataset.fallback) {
           img.dataset.fallback = '1';
+          bgBlur.remove();
           img.src = 'assets/images/comunicacao.svg';
         }
       }, { once: true });
@@ -414,10 +431,10 @@
 
     const body = document.createElement('div');
     body.className = 'card-body';
-    body.style.padding = '20px';
+    body.style.padding = '16px'; // Espaçamento otimizado para eliminar excessos em baixo
     body.style.display = 'flex';
     body.style.flexDirection = 'column';
-    body.style.gap = '8px';
+    body.style.gap = '6px';
 
     if (item.category) {
       const tag = document.createElement('span');
@@ -428,7 +445,7 @@
 
     const title = document.createElement('h3');
     title.textContent = escapeText(item.title) || 'Conteúdo Ulandu';
-    title.style.margin = '0 0 4px 0';
+    title.style.margin = '0 0 2px 0';
     body.append(title);
 
     if (item.summary) {
@@ -440,7 +457,7 @@
 
     if (item.body) {
       const details = document.createElement('details');
-      details.style.marginTop = '6px';
+      details.style.marginTop = '4px';
 
       const summaryLabel = document.createElement('summary');
       summaryLabel.textContent = 'See More...';
@@ -448,7 +465,7 @@
 
       const description = document.createElement('p');
       description.textContent = escapeText(item.body);
-      description.style.marginTop = '8px';
+      description.style.marginTop = '6px';
 
       details.append(summaryLabel, description);
       body.append(details);
@@ -464,7 +481,7 @@
       media.target = '_blank';
       media.rel = 'noopener noreferrer';
       media.textContent = 'Ver vídeo / publicação ↗';
-      media.style.marginTop = '6px';
+      media.style.marginTop = '4px';
 
       body.append(media);
     }
