@@ -385,7 +385,7 @@
       const imageWrap = document.createElement('div');
       imageWrap.className = 'card-image';
       imageWrap.style.width = '100%';
-      imageWrap.style.height = '340px'; // Altura aumentada para 340px para maior destaque profissional
+      imageWrap.style.height = '380px'; // Altura aumentada para 380px conforme solicitado
       imageWrap.style.overflow = 'hidden';
       imageWrap.style.position = 'relative';
       imageWrap.style.backgroundColor = '#0b1329';
@@ -400,8 +400,8 @@
       bgBlur.style.backgroundImage = `url(${item.image})`;
       bgBlur.style.backgroundSize = 'cover';
       bgBlur.style.backgroundPosition = 'center';
-      bgBlur.style.filter = 'blur(14px) brightness(0.55)';
-      bgBlur.style.transform = 'scale(1.1)';
+      bgBlur.style.filter = 'blur(16px) brightness(0.5)';
+      bgBlur.style.transform = 'scale(1.15)';
       imageWrap.append(bgBlur);
 
       const img = document.createElement('img');
