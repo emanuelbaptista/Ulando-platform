@@ -770,28 +770,32 @@ img, video, iframe {
 }
 
 
-/* --- CORREÇÕES CIRÚRGICAS FINAIS --- */
 
-/* 1. Remove barra de rolagem horizontal no mobile */
-html, body {
-  max-width: 100%;
-  overflow-x: hidden !important;
+/* --- CORREÇÕES FINAIS: LAYOUT DIÁLOGOS/FÓRUM E HEADER --- */
+
+/* 1. Remove qualquer margem superior indesejada na página inicial */
+body:not(.dialogos-page):not(.forum-page) main {
+  padding-top: 0 !important;
 }
 
-/* 2. Reduz e ajusta o logótipo no desktop para não ficar gigante */
-.brand-logo {
-  width: auto !important;
-  max-height: 36px !important;
-  object-fit: contain;
-  display: block;
+/* 2. Layout em grelha (Texto à esquerda, Imagem à direita) para Diálogos e Fórum CIAI */
+body.dialogos-page .page-hero .container,
+body.forum-page .page-hero .container,
+body.dialogos-page main .container:first-of-type,
+body.forum-page main .container:first-of-type {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 40px;
+  align-items: center;
 }
 
-/* 3. Desce o conteúdo nas páginas internas (Diálogos e Fórum CIAI) para não colar ao header */
-.page-hero {
-  padding-top: 50px !important;
-  margin-top: 0 !important;
-}
-
-main {
-  padding-top: 15px;
+/* Garante responsividade perfeita em telemóveis para estas páginas */
+@media (max-width: 900px) {
+  body.dialogos-page .page-hero .container,
+  body.forum-page .page-hero .container,
+  body.dialogos-page main .container:first-of-type,
+  body.forum-page main .container:first-of-type {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
 }
