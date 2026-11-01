@@ -7,7 +7,7 @@ try { const saved = localStorage.getItem('ulando-theme'); if (saved === 'light' 
 const updateTheme = () => {
   const light = themeRoot.dataset.theme === 'light';
   $$('.brand-logo').forEach(img => { img.src = light ? 'assets/images/ulando-logo-color.png' : 'assets/images/ulando-logo-white.png'; });
-  const icon = $('.theme-icon'); if (icon) icon.textContent = light ? '☀️' : '🌙';
+  const icon = $('.theme-icon'); if (icon) icon.textContent = light ? '☀' : '☾';
   if (themeBtn) {
     themeBtn.title = light ? 'Mudar para tema escuro' : 'Mudar para tema claro';
     themeBtn.setAttribute('aria-label', themeBtn.title);
