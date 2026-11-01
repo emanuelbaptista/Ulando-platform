@@ -385,26 +385,42 @@
       const imageWrap = document.createElement('div');
       imageWrap.className = 'card-image';
       imageWrap.style.width = '100%';
-      imageWrap.style.height = '260px'; // Altura aumentada para dar maior destaque à imagem
+      imageWrap.style.height = '280px';
       imageWrap.style.overflow = 'hidden';
       imageWrap.style.position = 'relative';
-      imageWrap.style.backgroundColor = 'rgba(0, 0, 0, 0.25)'; // Fundo elegante adaptado
+      imageWrap.style.backgroundColor = '#0b1329';
       imageWrap.style.display = 'flex';
       imageWrap.style.alignItems = 'center';
       imageWrap.style.justifyContent = 'center';
+
+      // Fundo difuso elegante para preencher as laterais profissionalmente
+      const bgBlur = document.createElement('div');
+      bgBlur.style.position = 'absolute';
+      bgBlur.style.inset = '0';
+      bgBlur.style.backgroundImage = `url(${item.image})`;
+      bgBlur.style.backgroundSize = 'cover';
+      bgBlur.style.backgroundPosition = 'center';
+      bgBlur.style.filter = 'blur(12px) brightness(0.6)';
+      bgBlur.style.transform = 'scale(1.1)';
+      imageWrap.append(bgBlur);
 
       const img = document.createElement('img');
       img.loading = 'lazy';
       img.alt = escapeText(item.title) || 'Imagem da publicação';
       img.src = item.image;
+      img.style.position = 'relative';
+      img.style.maxWidth = '100%';
+      img.style.maxHeight = '100%';
       img.style.width = '100%';
       img.style.height = '100%';
-      img.style.objectFit = 'contain'; // Garante que a imagem é exibida por completo sem cortes
+      img.style.objectFit = 'contain';
+      img.style.zIndex = '1';
       img.style.display = 'block';
 
       img.addEventListener('error', () => {
         if (!img.dataset.fallback) {
           img.dataset.fallback = '1';
+          bgBlur.remove();
           img.src = 'assets/images/comunicacao.svg';
         }
       }, { once: true });
@@ -415,7 +431,7 @@
 
     const body = document.createElement('div');
     body.className = 'card-body';
-    body.style.padding = '18px';
+    body.style.padding = '20px';
     body.style.display = 'flex';
     body.style.flexDirection = 'column';
     body.style.gap = '8px';
@@ -444,7 +460,7 @@
       details.style.marginTop = '6px';
 
       const summaryLabel = document.createElement('summary');
-      summaryLabel.textContent = 'See More...'; // Alterado para See More...
+      summaryLabel.textContent = 'See More...';
       summaryLabel.style.cursor = 'pointer';
 
       const description = document.createElement('p');
