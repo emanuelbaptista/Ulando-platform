@@ -385,9 +385,13 @@
       const imageWrap = document.createElement('div');
       imageWrap.className = 'card-image';
       imageWrap.style.width = '100%';
-      imageWrap.style.height = '190px';
+      imageWrap.style.height = '260px'; // Altura aumentada para dar maior destaque à imagem
       imageWrap.style.overflow = 'hidden';
       imageWrap.style.position = 'relative';
+      imageWrap.style.backgroundColor = 'rgba(0, 0, 0, 0.25)'; // Fundo elegante adaptado
+      imageWrap.style.display = 'flex';
+      imageWrap.style.alignItems = 'center';
+      imageWrap.style.justifyContent = 'center';
 
       const img = document.createElement('img');
       img.loading = 'lazy';
@@ -395,7 +399,7 @@
       img.src = item.image;
       img.style.width = '100%';
       img.style.height = '100%';
-      img.style.objectFit = 'cover';
+      img.style.objectFit = 'contain'; // Garante que a imagem é exibida por completo sem cortes
       img.style.display = 'block';
 
       img.addEventListener('error', () => {
@@ -440,7 +444,7 @@
       details.style.marginTop = '6px';
 
       const summaryLabel = document.createElement('summary');
-      summaryLabel.textContent = 'Ler descrição completa';
+      summaryLabel.textContent = 'See More...'; // Alterado para See More...
       summaryLabel.style.cursor = 'pointer';
 
       const description = document.createElement('p');
