@@ -363,6 +363,9 @@
   const makeContentCard = item => {
     const article = document.createElement('article');
     article.className = 'card reveal';
+    article.style.overflow = 'hidden';
+    article.style.display = 'flex';
+    article.style.flexDirection = 'column';
 
     if (
       item.media_url &&
@@ -378,15 +381,22 @@
       video.style.objectFit = 'cover';
 
       article.append(video);
-    } else if (item.image) {
+    } else if (item.image && item.image.trim() !== '') {
       const imageWrap = document.createElement('div');
       imageWrap.className = 'card-image';
+      imageWrap.style.width = '100%';
+      imageWrap.style.height = '190px';
+      imageWrap.style.overflow = 'hidden';
+      imageWrap.style.position = 'relative';
 
       const img = document.createElement('img');
       img.loading = 'lazy';
-      img.alt = escapeText(item.title) +
-        ' — imagem ilustrativa; consultar a publicação original para o registo oficial';
+      img.alt = escapeText(item.title) || 'Imagem da publicação';
       img.src = item.image;
+      img.style.width = '100%';
+      img.style.height = '100%';
+      img.style.objectFit = 'cover';
+      img.style.display = 'block';
 
       img.addEventListener('error', () => {
         if (!img.dataset.fallback) {
@@ -401,6 +411,10 @@
 
     const body = document.createElement('div');
     body.className = 'card-body';
+    body.style.padding = '18px';
+    body.style.display = 'flex';
+    body.style.flexDirection = 'column';
+    body.style.gap = '8px';
 
     if (item.category) {
       const tag = document.createElement('span');
@@ -411,20 +425,27 @@
 
     const title = document.createElement('h3');
     title.textContent = escapeText(item.title) || 'Conteúdo Ulandu';
+    title.style.margin = '0 0 4px 0';
     body.append(title);
 
-    const summary = document.createElement('p');
-    summary.textContent = escapeText(item.summary || item.body);
-    body.append(summary);
+    if (item.summary) {
+      const summary = document.createElement('p');
+      summary.textContent = escapeText(item.summary);
+      summary.style.margin = '0';
+      body.append(summary);
+    }
 
-    if (item.body && item.summary && item.body !== item.summary) {
+    if (item.body) {
       const details = document.createElement('details');
+      details.style.marginTop = '6px';
 
       const summaryLabel = document.createElement('summary');
       summaryLabel.textContent = 'Ler descrição completa';
+      summaryLabel.style.cursor = 'pointer';
 
       const description = document.createElement('p');
       description.textContent = escapeText(item.body);
+      description.style.marginTop = '8px';
 
       details.append(summaryLabel, description);
       body.append(details);
@@ -440,6 +461,7 @@
       media.target = '_blank';
       media.rel = 'noopener noreferrer';
       media.textContent = 'Ver vídeo / publicação ↗';
+      media.style.marginTop = '6px';
 
       body.append(media);
     }
