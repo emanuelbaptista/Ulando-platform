@@ -1503,7 +1503,7 @@ img {
         -webkit-backdrop-filter: blur(12px) !important;
         
         border-top: none !important;
-        border-left: 1px solid var(--line, rgba(161, 196, 239, 0.2)) !important;
+        border-left: none;
         border-right: none !important;
         border-bottom: 1px solid var(--line, rgba(161, 196, 239, 0.2)) !important;
         
@@ -1569,22 +1569,34 @@ img {
         width: 100%;
     }
 
-    .nav-dropdown .dropdown-menu {
-        display: none;
-        position: static;
-        width: 100%;
-        margin-top: 4px;
-        padding: 4px 0 4px 10px;
-        background: transparent;
-        border: 0;
-        border-left: 2px solid var(--line, rgba(161, 196, 239, 0.2));
-        box-shadow: none;
-    }
+  .nav-dropdown .dropdown-menu {
+    display: block !important;
+    position: static;
+    width: 100%;
+    margin-top: 0;
+    padding: 0 0 0 10px;
+    background: transparent;
+    border: 0;
+    border-left: none;
+    box-shadow: none;
+    
+    /* Propriedades da animação suave */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    max-height: 0;
+    overflow: hidden;
+    transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease, max-height 0.3s ease, padding 0.3s ease, margin-top 0.3s ease;
+}
 
-    .nav-dropdown.dropdown-open .dropdown-menu {
-        display: block;
-    }
-
+.nav-dropdown.dropdown-open .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    max-height: 400px; /* Altura máxima suficiente para o conteúdo do menu */
+    margin-top: 4px;
+    padding: 4px 0 4px 10px;
+}
     .nav-dropdown .dropdown-menu a {
         display: block;
         width: 100%;
@@ -1760,7 +1772,19 @@ img {
 [data-theme="light"] .field label {
     color: #174b31;
 }
+/* Bloqueia o scroll da página principal quando o menu mobile está aberto */
+body.menu-panel-open,
+body.menu-open {
+    overflow: hidden !important;
+}
 
+/* Garante que o menu móvel tem scroll próprio */
+@media (max-width: 1180px) {
+    .nav.open {
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+}
 /* ==========================================
    PROTEÇÃO DO CABEÇALHO CONTRA SOBREPOSIÇÕES
    ========================================== */
