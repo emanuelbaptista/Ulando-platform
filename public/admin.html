@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Painel de Administração | Ulandu</title>
     <link rel="stylesheet" href="assets/styles.css">
+    <!-- Font Awesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script defer src="assets/admin.js"></script>
 </head>
@@ -59,30 +60,6 @@
 
                 <div class="grid grid-4" id="stats"></div>
 
-                <!-- Gestão do Vídeo Institucional (Quem Somos) -->
-                <section class="panel" style="padding:24px;margin-top:26px">
-                    <h2 style="font-size:1.5rem">Vídeo Institucional (Página Quem Somos)</h2>
-                    <p>Publique, edite ou remova o vídeo institucional da empresa. Suporta ficheiros de 1MB até 1GB ou mais.</p>
-                    <div id="company-video-message" class="notice hidden" role="status"></div>
-                    
-                    <form id="company-video-form">
-                        <div class="field" style="margin-top:14px">
-                            <label for="company-video-file">Carregar Vídeo (Ficheiro até 1GB+)</label>
-                            <input id="company-video-file" type="file" accept="video/mp4,video/webm,video/quicktime">
-                            <button class="btn btn-soft" id="upload-company-video-btn" type="button" style="margin-top:8px">Carregar Vídeo Institucional</button>
-                            <small id="company-video-upload-status"></small>
-                        </div>
-                        <div class="field" style="margin-top:14px">
-                            <label for="company-video-url">URL do Vídeo</label>
-                            <input id="company-video-url" type="url" placeholder="Insira o URL ou carregue o ficheiro acima">
-                        </div>
-                        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:22px">
-                            <button class="btn btn-primary" type="submit">Publicar / Atualizar Vídeo</button>
-                            <button class="btn btn-outline" id="delete-company-video-btn" type="button">Remover Vídeo</button>
-                        </div>
-                    </form>
-                </section>
-
                 <div class="grid grid-2" style="margin-top:26px;align-items:start">
                     <!-- Formulário de Conteúdo -->
                     <section class="panel" style="padding:24px">
@@ -121,9 +98,9 @@
                                 <input id="image" placeholder="Carrega uma imagem abaixo ou usa um URL autorizado">
                             </div>
                             <div class="field" style="margin-top:14px">
-                                <label for="upload-file">Carregar ficheiro (Suporta de 1MB até 1GB+)</label>
+                                <label for="upload-file">Carregar imagem ou vídeo (máx. 30 MB)</label>
                                 <input id="upload-file" type="file" accept="image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm">
-                                <button class="btn btn-soft" id="upload-button" type="button" style="margin-top:6px">Carregar ficheiro</button>
+                                <button class="btn btn-soft" id="upload-button" type="button">Carregar ficheiro</button>
                                 <small id="upload-status"></small>
                             </div>
                             <div class="field" style="margin-top:14px">
@@ -155,6 +132,173 @@
                         </div>
                     </section>
                 </div>
+
+                <!-- Dashboard de Atividade -->
+                <section class="panel" style="padding:24px;margin-top:26px">
+                    <h2 style="font-size:1.5rem">Dashboard de atividade do site</h2>
+                    <p>Resumo calculado a partir dos dados guardados no servidor.</p>
+                    <div id="analytics-cards" class="grid grid-4" style="margin:18px 0"></div>
+                    <div class="grid grid-2">
+                        <div>
+                            <h3>Indicadores públicos</h3>
+                            <form id="site-stats-form">
+                                <div class="field">
+                                    <label for="metric-courses">Cursos realizados</label>
+                                    <input id="metric-courses" type="number" min="0" required>
+                                </div>
+                                <div class="field">
+                                    <label for="metric-professionals">Profissionais formados</label>
+                                    <input id="metric-professionals" type="number" min="0" required>
+                                </div>
+                                <div class="field">
+                                    <label for="metric-events">Eventos e diálogos</label>
+                                    <input id="metric-events" type="number" min="0" required>
+                                </div>
+                                <button class="btn btn-primary" type="submit">Atualizar indicadores</button>
+                            </form>
+                            <div id="stats-save-message" class="notice hidden" role="status"></div>
+                        </div>
+                        <div>
+                            <h3>Inscrições recentes</h3>
+                            <div id="recent-registrations">
+                                <p>A carregar dados…</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Gestão de Cursos -->
+                <!-- 
+                <section class="panel" style="padding:24px;margin-top:26px">
+                    <h2 style="font-size:1.5rem">Academia Ulandu — gerir cursos</h2>
+                    <p>Os cursos publicados aparecem na página da Academia e no formulário de inscrição.</p>
+                    <div id="course-admin-message" class="notice hidden" role="status"></div>
+                    <form id="course-admin-form">
+                        <input type="hidden" id="course-admin-id">
+                        <div class="grid grid-2">
+                            <div class="field">
+                                <label for="course-admin-title">Nome do curso *</label>
+                                <input id="course-admin-title" required maxlength="180">
+                            </div>
+                            <div class="field">
+                                <label for="course-admin-category">Categoria</label>
+                                <input id="course-admin-category" value="Formação">
+                            </div>
+                            <div class="field">
+                                <label for="course-admin-duration">Duração</label>
+                                <input id="course-admin-duration" placeholder="Ex.: 2 dias / 20 horas">
+                            </div>
+                            <div class="field">
+                                <label for="course-admin-description">Descrição</label>
+                                <textarea id="course-admin-description" rows="3"></textarea>
+                            </div>
+                        </div>
+                        <label style="display:flex;gap:8px;align-items:center;margin:14px 0">
+                            <input id="course-admin-published" type="checkbox" checked> Publicar curso
+                        </label>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap">
+                            <button class="btn btn-primary" type="submit">Guardar curso</button>
+                            <button class="btn btn-outline" type="button" id="course-admin-reset">Limpar</button>
+                        </div>
+                    </form>
+                    <div id="course-admin-list" style="margin-top:18px">A carregar cursos…</div>
+                </section>
+                -->
+
+                <!-- Gestão do Menu -->
+                <!--
+                <section class="panel" style="padding:24px;margin-top:26px">
+                    <h2 style="font-size:1.5rem">Menu de navegação</h2>
+                    <p>Adiciona, edita, oculta ou remove ligações do menu público. Os itens em “Mais” ficam no menu suspenso.</p>
+                    <div id="nav-admin-message" class="notice hidden" role="status"></div>
+                    <form id="nav-admin-form">
+                        <input type="hidden" id="nav-admin-id">
+                        <div class="grid grid-2">
+                            <div class="field">
+                                <label for="nav-admin-label">Texto do menu *</label>
+                                <input id="nav-admin-label" required maxlength="60">
+                            </div>
+                            <div class="field">
+                                <label for="nav-admin-href">Ligação / endereço *</label>
+                                <input id="nav-admin-href" required placeholder="ex.: sobre.html ou https://..." maxlength="300">
+                            </div>
+                            <div class="field">
+                                <label for="nav-admin-group">Localização</label>
+                                <select id="nav-admin-group">
+                                    <option value="main">Menu principal</option>
+                                    <option value="more">Menu Mais</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label for="nav-admin-position">Ordem</label>
+                                <input id="nav-admin-position" type="number" min="0" value="0">
+                            </div>
+                        </div>
+                        <label style="display:flex;gap:8px;align-items:center;margin:14px 0">
+                            <input id="nav-admin-visible" type="checkbox" checked> Mostrar no site
+                        </label>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap">
+                            <button class="btn btn-primary" type="submit">Guardar item</button>
+                            <button class="btn btn-outline" type="button" id="nav-admin-reset">Limpar</button>
+                        </div>
+                    </form>
+                    <div id="nav-admin-list" style="margin-top:18px">A carregar menu…</div>
+                </section>
+                -->
+
+                <!-- Logótipos por Tema -->
+                <!--
+                <section class="panel" style="padding:24px;margin-top:26px">
+                    <h2 style="font-size:1.5rem">Logótipo por tema</h2>
+                    <p>Indica o caminho ou URL HTTPS de uma imagem diferente para o modo claro e para o modo escuro. Podes usar um ficheiro previamente carregado pelo gestor de conteúdos.</p>
+                    <div id="brand-admin-message" class="notice hidden" role="status"></div>
+                    <form id="brand-admin-form">
+                        <div class="field">
+                            <label for="brand-logo-light">Logótipo do modo claro</label>
+                            <input id="brand-logo-light" placeholder="assets/images/ulandu-logo-color.png">
+                        </div>
+                        <div class="field" style="margin-top:14px">
+                            <label for="brand-logo-dark">Logótipo do modo escuro</label>
+                            <input id="brand-logo-dark" placeholder="assets/images/ulandu-logo-white.png">
+                        </div>
+                        <div class="field" style="margin-top:14px">
+                            <label for="brand-logo-target">Aplicar logótipo carregado em</label>
+                            <select id="brand-logo-target">
+                                <option value="light">Modo claro</option>
+                                <option value="dark">Modo escuro</option>
+                            </select>
+                        </div>
+                        <div class="field" style="margin-top:14px">
+                            <label for="brand-logo-file">Carregar imagem de logótipo</label>
+                            <input id="brand-logo-file" type="file" accept="image/png,image/jpeg,image/webp">
+                            <button class="btn btn-soft" type="button" id="brand-logo-upload">Carregar logótipo selecionado</button>
+                            <small id="brand-logo-upload-status"></small>
+                        </div>
+                        <button class="btn btn-primary" type="submit" style="margin-top:16px">Guardar logótipos</button>
+                    </form>
+                </section>
+                -->
+
+                <!-- Contas de Acesso -->
+                <section class="panel" style="padding:24px;margin-top:26px">
+                    <h2 style="font-size:1.5rem">Contas de acesso</h2>
+                    <p class="admin-help">Cria uma conta de demonstração individual para cada pessoa. No modo HTML, as contas ficam apenas neste navegador e não são um sistema de autenticação seguro para produção.</p>
+                    <div id="admin-users-message" class="notice hidden" role="status"></div>
+                    <form id="admin-user-form" class="grid grid-3" style="align-items:end">
+                        <div class="field">
+                            <label for="new-admin-email">Email do utilizador</label>
+                            <input id="new-admin-email" type="email" required placeholder="nome@ulandu.online">
+                        </div>
+                        <div class="field">
+                            <label for="new-admin-password">Palavra-passe (mín. 12 caracteres)</label>
+                            <input id="new-admin-password" type="password" minlength="12" required>
+                        </div>
+                        <button class="btn btn-primary" type="submit">Criar conta</button>
+                    </form>
+                    <div id="admin-users-list" style="margin-top:16px">
+                        <p>Disponível quando o servidor estiver activo.</p>
+                    </div>
+                </section>
             </section>
         </div>
     </main>

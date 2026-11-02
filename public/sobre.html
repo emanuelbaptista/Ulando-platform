@@ -45,7 +45,12 @@
                         <a href="projetos.html">Projetos</a>
                         <a href="multimedia.html">Multimédia</a>
                         <a href="blog.html">Blog</a>
+                        <!-- <a href="sobre.html#visao">Visão Geral</a> -->
+                        <!-- <a href="sobre.html#equipa">Nossa Equipa</a> -->
+                        <!-- <a href="sobre.html#voz">Voz Ulandu</a> -->
                         <a href="contacto.html">Contacto</a>
+                        <!-- <a href="admin.html">Login administrativo</a> -->
+                        <!-- <a href="academia.html#enrolment-modal">Inscrição</a> -->
                     </div>
                 </div>
             </nav>
@@ -97,7 +102,7 @@
                 <p>
                     A Ulandu Comunicação e Eventos é uma empresa angolana
                     fundada em 2023, sediada em Luanda, que ajuda indivíduos
-                    e organizações a comunicarem de forma estratégica e humanizada.
+                    e organizações a comunicarem de forma estratégica e humanizada[cite: 22].
                 </p>
 
             </div>
@@ -119,12 +124,12 @@
                             soluções de consultoria em comunicação, assessoria de
                             imprensa, organização de eventos e formação. O objetivo
                             é fortalecer a imagem, a relação com os públicos e os
-                            resultados dos clientes.
+                            resultados dos clientes[cite: 22].
                         </p>
 
                         <p>
                             A empresa apresenta-se como uma equipa jovem e dinâmica,
-                            que adapta cada projeto às necessidades de cada organização.
+                            que adapta cada projeto às necessidades de cada organização[cite: 22].
                         </p>
 
                         <a
@@ -150,61 +155,52 @@
 
                 </div>
 
-                <!-- Secção de Vídeo Institucional Flutuante -->
-                <section class="section" id="company-video-section">
+                <!-- Secção de Vídeo -->
+                <section class="section">
                     <div class="container">
 
-                        <div class="section-head" style="text-align: center; margin: 0 auto 30px auto;">
-                            <div class="eyebrow">Conheça a nossa empresa</div>
-                            <h2>Vídeo institucional</h2>
-                            <p>Assista ao vídeo oficial sobre a nossa empresa e serviços.</p>
+                        <div class="section-head">
+                            <div class="eyebrow">Conheça o trabalho</div>
+
+                            <h2>Vídeo sobre a formação e os serviços da Ulandu</h2>
+
+                            <p>
+                                Encontrámos uma publicação pública da Ulandu com
+                                testemunho em vídeo sobre a formação em Comunicação
+                                Institucional e Assessoria de Imprensa. Não encontrámos,
+                                nas fontes públicas pesquisadas, um vídeo institucional
+                                específico em que a própria equipa apresente todos os
+                                serviços; por isso, este conteúdo está identificado como
+                                testemunho e pode ser substituído pelo vídeo oficial
+                                quando a equipa o disponibilizar[cite: 22].
+                            </p>
                         </div>
 
-                        <!-- Vídeo Flutuante (Sem caixa rígida) -->
-                        <div class="video-flutuante-wrapper" id="company-video-container" style="display: none;">
-                            <video
-                                id="company-video-player"
-                                controls
-                                preload="metadata"
-                                playsinline
-                                style="width: 100%; height: auto; display: block;"
-                            >
-                                <source id="company-video-source" src="" type="video/mp4">
-                                O seu navegador não suporta vídeos HTML5.
-                            </video>
+                        <div class="panel" style="padding:18px">
+                            <div style="aspect-ratio:16/9;max-width:900px;margin:auto">
+                                <iframe
+                                    title="Testemunho sobre formação da Ulandu"
+                                    src="https://www.linkedin.com/embed/feed/update/urn:li:activity:7442932288427806720"
+                                    style="width:100%;height:100%;border:0"
+                                    allowfullscreen
+                                    loading="lazy"
+                                ></iframe>
+                            </div>
+
+                            <p style="margin-top:12px">
+                                <a
+                                    class="text-link"
+                                    href="https://pt.linkedin.com/company/ulandu-comunica%C3%A7%C3%A3o-e-eventos"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    Ver publicações oficiais da Ulandu ↗
+                                </a>
+                            </p>
                         </div>
 
                     </div>
                 </section>
-
-                <script>
-                    document.addEventListener("DOMContentLoaded", async () => {
-                        try {
-                            const res = await fetch('/api/company-video');
-                            const data = await res.json();
-                            if (data && data.url) {
-                                const container = document.getElementById('company-video-container');
-                                const player = document.getElementById('company-video-player');
-                                const source = document.getElementById('company-video-source');
-                                source.src = data.url;
-                                player.load();
-                                container.style.display = 'block';
-                            }
-                        } catch (_) {
-                            try {
-                                const localUrl = localStorage.getItem('ulandu-local-company-video-v1');
-                                if (localUrl) {
-                                    const container = document.getElementById('company-video-container');
-                                    const player = document.getElementById('company-video-player');
-                                    const source = document.getElementById('company-video-source');
-                                    source.src = localUrl;
-                                    player.load();
-                                    container.style.display = 'block';
-                                }
-                            } catch (err) {}
-                        }
-                    });
-                </script>
 
                 <div class="grid grid-3" style="margin-top:32px">
 
@@ -215,7 +211,7 @@
 
                         <p>
                             Transformar a comunicação numa ferramenta útil para
-                            a reputação, as relações e os objetivos das organizações.
+                            a reputação, as relações e os objetivos das organizações[cite: 22].
                         </p>
                     </article>
 
@@ -226,7 +222,7 @@
 
                         <p>
                             Consultoria de comunicação, assessoria de imprensa,
-                            relações públicas, eventos e formação profissional.
+                            relações públicas, eventos e formação profissional[cite: 22].
                         </p>
                     </article>
 
@@ -237,7 +233,7 @@
 
                         <p>
                             Soluções personalizadas, criatividade e atenção ao
-                            contexto de cada cliente.
+                            contexto de cada cliente[cite: 22].
                         </p>
                     </article>
 
@@ -251,7 +247,7 @@
                         <h2>Tem uma ideia para desenvolver?</h2>
 
                         <p>
-                            Converse connosco sobre os seus objetivos e necessidades.
+                            Converse connosco sobre os seus objetivos e necessidades[cite: 22].
                         </p>
                     </div>
 
@@ -283,7 +279,7 @@
 
                     <p style="margin-top:18px">
                         Comunicação estratégica, eventos e formação para aproximar
-                        pessoas, organizações e oportunidades.
+                        pessoas, organizações e oportunidades[cite: 22].
                     </p>
                 </div>
 
@@ -315,7 +311,7 @@
 
                     <p>
                         Tem uma ideia ou iniciativa? Vamos transformá-la numa
-                        ligação com impacto.
+                        ligação com impacto[cite: 22].
                     </p>
 
                     <a class="text-link" href="contacto.html">
@@ -327,11 +323,11 @@
 
             <div class="footer-bottom">
                 <span>
-                    © <span id="year"></span> Ulandu Comunicação e Eventos.
+                    © <span id="year"></span> Ulandu Comunicação e Eventos[cite: 22].
                 </span>
 
                 <span>
-                    Conteúdo institucional sujeito a validação da equipa Ulandu.
+                    Conteúdo institucional sujeito a validação da equipa Ulandu[cite: 22].
                 </span>
             </div>
 

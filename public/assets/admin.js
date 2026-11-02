@@ -23,9 +23,7 @@ const loginError = $('#login-error'), notice = $('#admin-message');
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&#39;' }[c]));
 const localMode = location.protocol === 'file:';
 const LOCAL_KEY = 'ulando-local-content-v1';
-const LOCAL_VIDEO_KEY = 'ulando-local-company-video-v1';
 const LOCAL_SESSION = 'ulando-local-admin-session';
-
 const readLocal = () => { try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]'); } catch (_) { return []; } };
 const writeLocal = items => localStorage.setItem(LOCAL_KEY, JSON.stringify(items));
 
@@ -37,7 +35,8 @@ const localApi = async (url, opts = {}) => {
     const users = [
       { email: 'admin@ulando.online', password: 'UlanduAdmin2026!Admin' },
       { email: 'conteudos@ulando.online', password: 'UlanduConteudos2026!Equipe' },
-      { email: 'media@ulando.online', password: 'UlanduMedia2026!Equipe' }
+      { email: 'media@ulando.online', password: 'UlanduMedia2026!Equipe' },
+      ...JSON.parse(localStorage.getItem('ulando-local-admin-users-v1') || '[]')
     ];
     const match = users.find(u => u.email.toLowerCase() === String(d.email || "").toLowerCase() && u.password === d.password);
     if (!match) throw new Error('E-mail ou palavra-passe incorretos.');
@@ -46,12 +45,6 @@ const localApi = async (url, opts = {}) => {
   }
   if (path.endsWith('/api/admin/logout')) { localStorage.removeItem(LOCAL_SESSION); return { ok: true }; }
   if (path.endsWith('/api/admin/me')) return localStorage.getItem(LOCAL_SESSION) ? { authenticated: true, admin: { email: localStorage.getItem(LOCAL_SESSION) } } : { authenticated: false };
-  if (path.endsWith('/api/company-video')) return { url: localStorage.getItem(LOCAL_VIDEO_KEY) || '' };
-  if (path.endsWith('/api/admin/company-video') && method === 'POST') {
-    const d = JSON.parse(opts.body || '{}');
-    localStorage.setItem(LOCAL_VIDEO_KEY, d.url || '');
-    return { ok: true, url: d.url };
-  }
   if (path.endsWith('/api/admin/content') && method === 'GET') return readLocal();
   if (path.endsWith('/api/admin/content') && method === 'POST') {
     const items = readLocal(), d = JSON.parse(opts.body || '{}'); 
@@ -80,23 +73,27 @@ const localApi = async (url, opts = {}) => {
 
 async function api(url, opts = {}) {
   if (localMode) return localApi(url, opts);
+  
   const headers = {
     ...(opts.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
     ...(opts.headers || {})
   };
-  const r = await fetch(url, { credentials: 'same-origin', ...opts, headers });
+const r = await fetch(url, {
+  credentials: 'same-origin',
+  ...opts,
+  headers: headers
+});
+
   const data = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(data.error || data.message || 'Não foi possível concluir a operação.');
   return data;
 }
-
 function message(text) { if (notice) { notice.textContent = text; notice.classList.remove('hidden'); } }
 function showDashboard(admin) {
   loginPanel?.classList.add('hidden');
   dashboard?.classList.remove('hidden');
   $('#welcome').textContent = admin?.email ? `Sessão iniciada: ${admin.email}` : 'Sessão iniciada';
   refresh();
-  loadCompanyVideoAdmin();
 }
 
 loginForm?.addEventListener('submit', async e => {
@@ -145,59 +142,11 @@ async function refresh() {
   } catch (e) { container.innerHTML = `<p>${esc(e.message)}</p>`; }
 }
 
-async function loadCompanyVideoAdmin() {
-  try {
-    const res = await api('/api/company-video');
-    if (res && res.url) {
-      $('#company-video-url').value = res.url;
-    }
-  } catch (_) {}
-}
-
-$('#upload-company-video-btn')?.addEventListener('click', async () => {
-  const file = $('#company-video-file')?.files[0]; 
-  const statusEl = $('#company-video-upload-status');
-  if (!file) { statusEl.textContent = 'Escolha primeiro um ficheiro de vídeo.'; return; }
-  statusEl.textContent = 'A carregar vídeo pesado (pode demorar alguns segundos)...';
-  const fd = new FormData(); fd.append('file', file);
-  try {
-    const d = await api('/api/admin/upload', { method: 'POST', body: fd });
-    $('#company-video-url').value = d.url || d.path || d.filename || '';
-    statusEl.textContent = 'Vídeo carregado com sucesso!';
-  } catch (e) { statusEl.textContent = e.message; }
-});
-
-$('#company-video-form')?.addEventListener('submit', async e => {
-  e.preventDefault();
-  const url = $('#company-video-url').value;
-  const msgEl = $('#company-video-message');
-  try {
-    await api('/api/admin/company-video', { method: 'POST', body: JSON.stringify({ url }) });
-    msgEl.textContent = 'Vídeo institucional guardado com sucesso na página Quem Somos!';
-    msgEl.classList.remove('hidden');
-  } catch (err) {
-    msgEl.textContent = err.message;
-    msgEl.classList.remove('hidden');
-  }
-});
-
-$('#delete-company-video-btn')?.addEventListener('click', async () => {
-  if (confirm('Tem certeza que deseja apagar o vídeo institucional?')) {
-    $('#company-video-url').value = '';
-    try {
-      await api('/api/admin/company-video', { method: 'POST', body: JSON.stringify({ url: '' }) });
-      const msgEl = $('#company-video-message');
-      msgEl.textContent = 'Vídeo removido com sucesso.';
-      msgEl.classList.remove('hidden');
-    } catch (e) {}
-  }
-});
-
 $('#refresh')?.addEventListener('click', refresh);
 $('#reset-form')?.addEventListener('click', () => { $('#content-form')?.reset(); $('#content-id').value = ''; $('#editor-title').textContent = 'Adicionar conteúdo'; });
 
 $('#upload-button')?.addEventListener('click', async () => {
-  const file = $('#upload-file')?.files[0]; if (!file) { $('#upload-status').textContent = 'Escolha primeiro um ficheiro.'; return; }
+  const file = $('#upload-file')?.files[0]; if (!file) { $('#upload-status').textContent = 'Escolhe primeiro um ficheiro.'; return; }
   const fd = new FormData(); fd.append('file', file);
   try {
     const d = await api('/api/admin/upload', { method: 'POST', body: fd });
