@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
 
 :root {
@@ -24,8 +23,8 @@
     --surface: #f1faf4;
     --surface2: #dff3e6;
     --text: #123d27;
-    --muted: #315b43;
-    --line: rgba(17, 107, 64, .18);
+    --muted: #214732;
+    --line: rgba(17, 107, 64, .25);
     --cyan: #198754;
     --blue: #198754;
     --blue2: #116b40;
@@ -50,6 +49,7 @@ body {
     background: var(--bg);
     color: var(--text);
     font-family: 'DM Sans', sans-serif;
+    font-size: clamp(0.88rem, 1.2vw, 1rem); /* Texto adapta-se suavemente à tela */
     line-height: 1.6;
     transition: background .25s, color .25s;
     min-height: 100vh;
@@ -59,13 +59,13 @@ body {
 
 h1, h2, h3, h4 {
     font-family: Manrope, sans-serif;
-    line-height: 1.13;
-    letter-spacing: -.035em;
-    margin: 0 0 16px;
+    line-height: 1.15;
+    letter-spacing: -.025em;
+    margin: 0 0 14px;
 }
 
 h1 {
-    font-size: clamp(2.5rem, 5vw, 5rem);
+    font-size: clamp(2rem, 4.5vw, 4rem); /* Texto adaptativo para mobile */
     font-weight: 800;
 }
 
@@ -170,26 +170,26 @@ h1 {
 }
 
 .stat-number {
-    font-size: 2rem;
+    font-size: clamp(1.5rem, 3vw, 2rem); /* Adaptativo */
     font-weight: 700;
     color: #ffffff;
     line-height: 1.2;
 }
 
 .stat-label {
-    font-size: 0.95rem;
+    font-size: clamp(0.82rem, 1vw, 0.95rem); /* Adaptativo */
     color: #94a3b8;
     margin-top: 4px;
     display: block;
 }
 
 h2 {
-    font-size: clamp(2rem, 3.5vw, 3.25rem);
+    font-size: clamp(1.6rem, 3.2vw, 3.25rem); /* Adaptativo */
     font-weight: 800;
 }
 
 h3 {
-    font-size: 1.2rem;
+    font-size: clamp(1.05rem, 1.5vw, 1.2rem); /* Adaptativo */
 }
 
 p {
@@ -540,7 +540,7 @@ img {
 }
 
 .hero p {
-    font-size: 1.12rem;
+    font-size: clamp(0.95rem, 1.5vw, 1.12rem); /* Adaptativo para mobile */
     max-width: 600px;
     margin: 24px 0 30px;
 }
@@ -635,7 +635,7 @@ img {
 }
 
 .service-card p {
-    font-size: .93rem;
+    font-size: clamp(0.85rem, 1.1vw, .93rem); /* Adaptativo */
 }
 
 .text-link {
@@ -814,7 +814,7 @@ img {
 }
 
 .card p {
-    font-size: .92rem;
+    font-size: clamp(0.85rem, 1.1vw, .92rem); /* Adaptativo */
 }
 
 /* ==========================================
@@ -832,13 +832,19 @@ img {
     align-items: center;
 }
 
+/* Mantém a caixa intacta no modo claro, ajustando apenas o contraste do texto interno para ficar visível */
 [data-theme="light"] .cta-band {
-    background: linear-gradient(120deg, #198754, #0d5633 78%);
+    background: #f1faf4; 
     border-color: rgba(17, 107, 64, .24);
 }
 
+[data-theme="light"] .cta-band h2,
+[data-theme="light"] .cta-band p {
+    color: #123d27 !important; /* Texto escuro bem visível na caixa clara */
+}
+
 .cta-band h2 {
-    font-size: clamp(1.7rem, 3vw, 2.6rem);
+    font-size: clamp(1.4rem, 2.8vw, 2.6rem); /* Adaptativo para mobile */
     max-width: 650px;
 }
 
@@ -863,7 +869,7 @@ img {
 }
 
 .page-hero h1 {
-    font-size: clamp(2.4rem, 4vw, 4rem);
+    font-size: clamp(2rem, 3.8vw, 4rem); /* Adaptativo */
 }
 
 .breadcrumb {
@@ -878,7 +884,7 @@ img {
 
 .page-hero p {
     max-width: 700px;
-    font-size: 1.05rem;
+    font-size: clamp(0.92rem, 1.3vw, 1.05rem); /* Adaptativo */
 }
 
 /* ==========================================
@@ -1290,7 +1296,7 @@ img {
     }
 
     .hero h1 {
-        font-size: clamp(2.65rem, 8vw, 4.1rem);
+        font-size: clamp(2.2rem, 6vw, 3.5rem); /* Texto adaptado para tablets */
     }
 
     .section {
@@ -1367,12 +1373,12 @@ img {
     }
 
     .hero h1 {
-        font-size: clamp(2.35rem, 10.5vw, 3.15rem);
+        font-size: clamp(1.8rem, 7.5vw, 2.4rem); /* Texto reduzido/adaptativo para telemóveis */
         overflow-wrap: anywhere;
     }
 
     .hero p {
-        font-size: 1rem;
+        font-size: clamp(0.88rem, 3.5vw, 0.98rem); /* Texto adaptado para telemóveis */
     }
 
     .hero-actions {
@@ -1415,7 +1421,7 @@ img {
     }
 
     .page-hero h1 {
-        font-size: clamp(2.2rem, 9vw, 3rem);
+        font-size: clamp(1.8rem, 7.5vw, 2.4rem); /* Adaptativo para mobile */
     }
 }
 
@@ -1486,15 +1492,14 @@ img {
         z-index: 111;
     }
 
-    /* Menu esticado para preencher o espaço restante até à parede direita */
     .nav {
         position: absolute !important;
         top: 100% !important;
-        right: -16px !important;           /* Estica o menu ligeiramente para fora para tapar o espaço */
+        right: -16px !important;
         left: auto !important;
         bottom: auto !important;
         
-        width: 240px !important;           /* Largura esticada para preencher todo o canto */
+        width: 240px !important;
         height: auto !important;
         max-height: calc(100vh - 90px) !important;
         
@@ -1517,7 +1522,6 @@ img {
         overflow-y: auto !important;
         z-index: 112 !important;
 
-        /* Animação suave */
         opacity: 0;
         visibility: hidden;
         pointer-events: none;
@@ -1580,7 +1584,6 @@ img {
     border-left: none;
     box-shadow: none;
     
-    /* Propriedades da animação suave */
     opacity: 0;
     visibility: hidden;
     transform: translateY(-8px);
@@ -1593,7 +1596,7 @@ img {
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
-    max-height: 400px; /* Altura máxima suficiente para o conteúdo do menu */
+    max-height: 400px;
     margin-top: 4px;
     padding: 4px 0 4px 10px;
 }
@@ -1772,19 +1775,19 @@ img {
 [data-theme="light"] .field label {
     color: #174b31;
 }
-/* Bloqueia o scroll da página principal quando o menu mobile está aberto */
+
 body.menu-panel-open,
 body.menu-open {
     overflow: hidden !important;
 }
 
-/* Garante que o menu móvel tem scroll próprio */
 @media (max-width: 1180px) {
     .nav.open {
         overflow-y: auto !important;
         -webkit-overflow-scrolling: touch;
     }
 }
+
 /* ==========================================
    PROTEÇÃO DO CABEÇALHO CONTRA SOBREPOSIÇÕES
    ========================================== */
@@ -1853,7 +1856,7 @@ body {
 }
 
 /* ==========================================
-   BOTÃO SOLICITAR PROPOSTA — DESIGN ELEGANTE
+   BOTÃO SOLICITAR PROPOSTA — DESIGN ORIGINAL
    ========================================== */
 
 .header-actions > .header-signup-link {
@@ -1908,7 +1911,6 @@ body {
     outline-offset: 3px;
 }
 
-/* Mantém o botão azul também no modo claro */
 [data-theme="light"] .header-actions > .header-signup-link {
     background: linear-gradient(135deg, #198754, #116b40) !important;
 }
@@ -1917,7 +1919,6 @@ body {
     background: #0d68e8;
 }
 
-/* TABLETS */
 @media (max-width: 1180px) {
     .header-actions {
         display: flex;
@@ -1931,7 +1932,6 @@ body {
     }
 }
 
-/* TELEMÓVEIS */
 @media (max-width: 540px) {
     .header-actions {
         gap: 6px;
@@ -1953,81 +1953,6 @@ body {
 /* ==========================================
    HERO — ORGANIZAÇÃO DOS BOTÕES
 ========================================== */
-
-.hero-actions {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-    width: fit-content;
-    max-width: 100%;
-    margin-top: 18px;
-}
-
-.hero-actions .btn {
-    min-height: 46px;
-    padding: 12px 20px;
-    border-radius: 9px;
-    font-size: .9rem;
-    font-weight: 600;
-    box-sizing: border-box;
-}
-
-/* Botão Conheça a Ulandu */
-
-.hero-actions .hero-about-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: transparent;
-    color: var(--text);
-    border: 1px solid var(--line);
-    box-shadow: none;
-
-    transition:
-        border-color .2s ease,
-        background .2s ease,
-        transform .2s ease;
-}
-
-/* Efeito hover */
-
-.hero-actions .hero-about-btn:hover {
-    border-color: var(--cyan);
-    background: rgba(255, 255, 255, .06);
-    transform: translateY(-2px);
-}
-
-/* Modo claro */
-
-[data-theme="light"] .hero-actions .hero-about-btn {
-    color: var(--text);
-    border-color: rgba(17, 107, 64, .25);
-    background: rgba(255, 255, 255, .7);
-}
-
-[data-theme="light"] .hero-actions .hero-about-btn:hover {
-    background: #e2f5e9;
-    border-color: #198754;
-}
-
-/* Responsividade */
-
-@media (max-width: 540px) {
-
-    .hero-actions {
-        width: 100%;
-        max-width: 320px;
-        align-items: stretch;
-    }
-
-    .hero-actions .btn {
-        width: 100%;
-    }
-
-}
-
-/* UPGRADE: botões do Hero lado a lado, com medidas iguais */
 
 .hero-actions {
     display: flex;
@@ -2091,15 +2016,11 @@ body {
     }
 }
 
-/* Transição suave para o painel do menu mobile */
-
 /* ==========================================
    HEADER RESPONSIVO — CORREÇÃO DEFINITIVA
    ========================================== */
 
-/* COMPUTADORES — MENU SEMPRE VISÍVEL */
 @media (min-width: 1181px) {
-
     .site-header {
         display: block;
         position: sticky;
@@ -2147,9 +2068,7 @@ body {
     }
 }
 
-/* TABLETS E TELEMÓVEIS — MENU ANIMADO */
 @media (max-width: 1180px) {
-
     .nav {
         transform: translateY(-20px);
         opacity: 0;
@@ -2193,18 +2112,9 @@ body {
     .nav a:nth-child(6) { transition-delay: 0.3s; }
 }
 
-/* ACESSIBILIDADE */
 @media (prefers-reduced-motion: reduce) {
     .nav,
     .nav a {
         transition: none !important;
     }
 }
-
-/* ==========================================
-   FIM DO CSS
-   ========================================== */
-
-/* ==========================================
-   FIM DO CSS
-   ========================================== */

@@ -7,7 +7,11 @@ try { const saved = localStorage.getItem('ulando-theme'); if (saved === 'light' 
 const updateTheme = () => {
   const light = themeRoot.dataset.theme === 'light';
   $$('.brand-logo').forEach(img => { img.src = light ? 'assets/images/ulando-logo-color.png' : 'assets/images/ulando-logo-white.png'; });
-  const icon = $('.theme-icon'); if (icon) icon.textContent = light ? '☀' : '☾';
+  const icon = $('.theme-icon'); 
+  if (icon) {
+    icon.className = light ? 'fa-solid fa-sun theme-icon' : 'fa-solid fa-moon theme-icon';
+    icon.textContent = '';
+  }
   if (themeBtn) {
     themeBtn.title = light ? 'Mudar para tema escuro' : 'Mudar para tema claro';
     themeBtn.setAttribute('aria-label', themeBtn.title);
@@ -78,16 +82,17 @@ async function api(url, opts = {}) {
     ...(opts.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
     ...(opts.headers || {})
   };
-const r = await fetch(url, {
-  credentials: 'same-origin',
-  ...opts,
-  headers: headers
-});
+  const r = await fetch(url, {
+    credentials: 'same-origin',
+    ...opts,
+    headers: headers
+  });
 
   const data = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(data.error || data.message || 'Não foi possível concluir a operação.');
   return data;
 }
+
 function message(text) { if (notice) { notice.textContent = text; notice.classList.remove('hidden'); } }
 function showDashboard(admin) {
   loginPanel?.classList.add('hidden');

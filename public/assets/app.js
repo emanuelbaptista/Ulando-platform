@@ -9,7 +9,6 @@
   const nav = $('.nav');
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // Theme persists between all pages and always shows the action's icon.
   let savedTheme = null;
   try {
     savedTheme = window.localStorage.getItem('ulandu-theme');
@@ -31,7 +30,11 @@
 
     const icon = $('.theme-icon', themeBtn || document);
 
-    if (icon) icon.textContent = light ? '☀' : '☾';
+    // Substituição de emojis por ícones do Font Awesome
+    if (icon) {
+      icon.className = light ? 'fa-solid fa-sun theme-icon' : 'fa-solid fa-moon theme-icon';
+      icon.textContent = '';
+    }
 
     if (themeBtn) {
       themeBtn.setAttribute('aria-label', light ? 'Mudar para tema escuro' : 'Mudar para tema claro');
@@ -49,7 +52,6 @@
     .then(applyBrandSettings)
     .catch(() => updateThemeControl());
 
-  // Mobile navigation and backdrop.
   let backdrop = $('.nav-backdrop');
 
   if (!backdrop) {
@@ -92,7 +94,6 @@
 
   menuBtn?.addEventListener('click', event => {
     event.preventDefault();
-
     if (nav?.classList.contains('open')) {
       closeMenu();
     } else {
@@ -113,8 +114,7 @@
     if (window.innerWidth > 1180) closeMenu();
   });
 
-  // Event delegation for navigation loaded asynchronously.
- document.addEventListener('click', event => {
+  document.addEventListener('click', event => {
     const moreButton = event.target.closest('.nav-dropdown > button');
 
     if (moreButton) {
@@ -125,11 +125,8 @@
         if (!wrap) return;
 
         const isOpen = wrap.classList.contains('dropdown-open');
-
-        // Fecha todos os menus abertos primeiro
         closeMoreMenu();
 
-        // Se o menu clicado não estava aberto, abre-o agora
         if (!isOpen) {
             wrap.classList.add('dropdown-open');
             moreButton.setAttribute('aria-expanded', 'true');
@@ -144,15 +141,14 @@
         return;
     }
 
-    // Se o utilizador clicar fora do dropdown "Mais", fecha-o
     if (!event.target.closest('.nav-dropdown')) {
         closeMoreMenu();
     }
 
     const navLink = event.target.closest('.nav a');
     if (navLink) closeMenu();
-});
-  // Build navigation from the server.
+  });
+
   fetch('/api/navigation')
     .then(response => response.ok ? response.json() : [])
     .then(items => {
@@ -190,14 +186,13 @@
         const closeButton = document.createElement('button');
         closeButton.type = 'button';
         closeButton.className = 'dropdown-close';
-        closeButton.textContent = 'Fechar menu ×';
+        closeButton.innerHTML = 'Fechar menu <i class="fa-solid fa-xmark"></i>';
 
         menu.append(closeButton);
         wrap.append(button, menu);
         nav.append(wrap);
       }
 
-      // Mark the current page.
       const currentFile = location.pathname.split('/').pop() || 'index.html';
 
       $$('a[href]', nav).forEach(link => {
@@ -219,7 +214,6 @@
     })
     .catch(() => {});
 
-  // Theme toggle.
   themeBtn?.addEventListener('click', () => {
     root.dataset.theme = root.dataset.theme === 'light' ? 'dark' : 'light';
 
@@ -232,7 +226,6 @@
 
   updateThemeControl();
 
-  // Current page state and page transition.
   const currentFile = location.pathname.split('/').pop() || 'index.html';
 
   $$('a[href]').forEach(link => {
@@ -307,7 +300,6 @@
     document.body.classList.add('page-entered');
   });
 
-  // Scroll reveal.
   const observer = 'IntersectionObserver' in window
     ? new IntersectionObserver(entries => {
         entries.forEach(entry => {
@@ -330,7 +322,6 @@
     }
   });
 
-  // Official logo fallback.
   $$('.brand-logo').forEach(img => {
     img.addEventListener('error', () => {
       img.hidden = true;
@@ -343,7 +334,6 @@
     }, { once: true });
   });
 
-  // Image fallback.
   $$('img:not(.brand-logo)').forEach(img => {
     img.addEventListener('error', () => {
       if (!img.dataset.localFallback) {
@@ -353,7 +343,6 @@
     }, { once: true });
   });
 
-  // Published content.
   const escapeText = value => String(value || '').trim();
 
   const observerForContent = 'IntersectionObserver' in window
@@ -392,8 +381,8 @@
       const imageWrap = document.createElement('div');
       imageWrap.className = 'card-image';
       imageWrap.style.width = '100%';
-      imageWrap.style.height = 'auto'; // Altura automática proporcional para nunca cortar a imagem
-      imageWrap.style.maxHeight = '420px'; // Altura máxima elegante
+      imageWrap.style.height = 'auto';
+      imageWrap.style.maxHeight = '420px';
       imageWrap.style.overflow = 'hidden';
       imageWrap.style.position = 'relative';
       imageWrap.style.backgroundColor = '#0b1329';
@@ -401,7 +390,6 @@
       imageWrap.style.alignItems = 'center';
       imageWrap.style.justifyContent = 'center';
 
-      // Fundo difuso profissional para preencher harmoniosamente qualquer espaço lateral
       const bgBlur = document.createElement('div');
       bgBlur.style.position = 'absolute';
       bgBlur.style.inset = '0';
@@ -420,7 +408,7 @@
       img.style.width = '100%';
       img.style.height = 'auto';
       img.style.maxHeight = '420px';
-      img.style.objectFit = 'contain'; // Garante que a imagem é 100% visível, sem cortes
+      img.style.objectFit = 'contain';
       img.style.zIndex = '1';
       img.style.display = 'block';
 
@@ -438,7 +426,7 @@
 
     const body = document.createElement('div');
     body.className = 'card-body';
-    body.style.padding = '16px'; // Espaçamento otimizado para eliminar excessos em baixo
+    body.style.padding = '16px';
     body.style.display = 'flex';
     body.style.flexDirection = 'column';
     body.style.gap = '6px';
@@ -467,7 +455,7 @@
       details.style.marginTop = '4px';
 
       const summaryLabel = document.createElement('summary');
-      summaryLabel.textContent = 'See More...';
+      summaryLabel.textContent = 'Ver mais...';
       summaryLabel.style.cursor = 'pointer';
 
       const description = document.createElement('p');
@@ -487,7 +475,7 @@
       media.href = item.media_url;
       media.target = '_blank';
       media.rel = 'noopener noreferrer';
-      media.textContent = 'Ver vídeo / publicação ↗';
+      media.innerHTML = 'Ver vídeo / publicação <i class="fa-solid fa-arrow-up-right-from-square"></i>';
       media.style.marginTop = '4px';
 
       body.append(media);
@@ -585,7 +573,6 @@
     });
   }
 
-  // Content filters.
   $$('.filter-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       $$('.filter-btn').forEach(other => {
@@ -603,7 +590,6 @@
     });
   });
 
-  // Contact form.
   const contactForm = $('#contact-form');
 
   contactForm?.addEventListener('submit', event => {
@@ -633,7 +619,6 @@
     }
   });
 
-  // Academy catalogue and enrolment.
   const courseList = $('#course-list');
   let academyCourses = [];
   const modal = $('#enrolment-modal');
@@ -791,7 +776,6 @@
     }
   });
 
-  // Animated statistics.
   async function animateStats() {
     const nodes = $$('[data-stat]');
 
@@ -866,7 +850,6 @@
 
   animateStats();
 
-  // Global search.
   const searchForm = $('#global-search');
   const searchInput = $('#global-search-input');
   const searchResults = $('#global-search-results');
@@ -951,7 +934,6 @@
     });
   });
 
-  // Current year.
   $$('[data-year]').forEach(element => {
     element.textContent = new Date().getFullYear();
   });
