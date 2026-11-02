@@ -1351,8 +1351,8 @@ img {
     }
 
     .brand-logo {
-        width: 108px;
-        height: 108px;
+        width: 60px;
+        height: 60px;
     }
 
     .header-actions {
@@ -2116,5 +2116,279 @@ body {
     .nav,
     .nav a {
         transition: none !important;
+    }
+}
+
+
+/* ==========================================
+   MENU MOBILE — ALINHAMENTO À DIREITA
+   Mantém as cores e os estilos originais
+========================================== */
+
+@media (max-width: 1180px) {
+
+    .site-header {
+        position: relative !important;
+        z-index: 110;
+    }
+
+    .header-inner {
+        position: relative !important;
+        z-index: 111;
+    }
+
+    .nav {
+        position: absolute !important;
+
+        top: 100% !important;
+        right: -16px !important;
+        left: auto !important;
+        bottom: auto !important;
+
+        width: 240px !important;
+        max-width: calc(100vw - 24px) !important;
+        height: auto !important;
+        max-height: calc(100vh - 90px) !important;
+
+        box-sizing: border-box;
+
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+
+        padding: 8px !important;
+        gap: 4px !important;
+
+        border-radius: 0 0 0 14px !important;
+
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+
+        z-index: 112 !important;
+
+        transform: translateY(-8px);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+
+        transition:
+            transform .3s ease,
+            opacity .3s ease,
+            visibility .3s ease;
+    }
+
+    /* Abrir menu */
+    .nav.open,
+    body.menu-panel-open .nav {
+        transform: translateY(0);
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+    }
+
+    /* Preservar posicionamento dos itens */
+    .nav > a,
+    .nav > .nav-dropdown > button {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* Botão hambúrguer permanece acima do painel */
+    .menu-toggle {
+        position: relative;
+        z-index: 113 !important;
+    }
+
+    /* Preservar o alinhamento dos botões do cabeçalho */
+    .header-actions {
+        margin-left: auto;
+    }
+}
+
+/* Força absoluta de cor no menu flutuante e container no modo claro */
+html[data-theme="light"] div[class*="dropdown"],
+html[data-theme="light"] ul[class*="menu"],
+html[data-theme="light"] .nav-dropdown,
+html[data-theme="light"] .dropdown-menu {
+  background-color: #198754 !important;
+  color: #ffffff !important;
+}
+
+html[data-theme="light"] div[class*="dropdown"] a,
+html[data-theme="light"] ul[class*="menu"] a,
+html[data-theme="light"] .nav-dropdown a,
+html[data-theme="light"] .dropdown-menu a {
+  color: #ffffff !important;
+}
+
+/* Torna todo o painel principal do menu verde no modo claro */
+html[data-theme="light"] .nav-dropdown,
+html[data-theme="light"] .dropdown-menu,
+html[data-theme="light"] nav ul {
+  background-color: #198754 !important;
+  color: #ffffff !important;
+  border-color: #146c43 !important;
+}
+
+/* Garante que todos os textos e itens dentro do menu fiquem legíveis */
+html[data-theme="light"] .nav-dropdown a,
+html[data-theme="light"] .dropdown-menu a,
+html[data-theme="light"] nav ul li a,
+html[data-theme="light"] .dropdown-menu span {
+  color: #ffffff !important;
+}
+
+/* Efeito hover para os itens do menu no modo claro */
+html[data-theme="light"] .nav-dropdown a:hover,
+html[data-theme="light"] .dropdown-menu a:hover,
+html[data-theme="light"] nav ul li a:hover {
+  background-color: #146c43 !important;
+  color: #ffffff !important;
+}
+
+/* Força a cor verde em qualquer caixa de menu, lista ou painel flutuante no modo claro */
+html[data-theme="light"] nav,
+html[data-theme="light"] .nav,
+html[data-theme="light"] .menu,
+html[data-theme="light"] .dropdown,
+html[data-theme="light"] [class*="menu"],
+html[data-theme="light"] [class*="dropdown"] {
+  background-color: #198754 !important;
+  color: #ffffff !important;
+}
+
+/* Garante que todos os textos dentro do menu fiquem brancos e legíveis */
+html[data-theme="light"] nav a,
+html[data-theme="light"] .nav a,
+html[data-theme="light"] .menu a,
+html[data-theme="light"] .dropdown a,
+html[data-theme="light"] [class*="menu"] a,
+html[data-theme="light"] [class*="dropdown"] a {
+  color: #ffffff !important;
+}
+
+/* Efeito ao passar o mouse nos itens */
+html[data-theme="light"] nav a:hover,
+html[data-theme="light"] .menu a:hover,
+html[data-theme="light"] [class*="menu"] a:hover {
+  background-color: #146c43 !important;
+  color: #ffffff !important;
+}
+
+/* Remove o fundo claro do item ativo/focado no menu no modo claro */
+html[data-theme="light"] nav a:hover,
+html[data-theme="light"] nav a:focus,
+html[data-theme="light"] .menu a:hover,
+html[data-theme="light"] .menu a:focus,
+html[data-theme="light"] [class*="menu"] a:hover,
+html[data-theme="light"] [class*="menu"] a:focus,
+html[data-theme="light"] [class*="dropdown"] a.active,
+html[data-theme="light"] [class*="dropdown"] a:hover {
+  background-color: #146c43 !important; /* Um tom de verde ligeiramente mais escuro para o hover */
+  color: #ffffff !important;
+}
+
+/* Deixa o item ativo ou focado com exatamente o mesmo verde do fundo do menu */
+html[data-theme="light"] nav a:hover,
+html[data-theme="light"] nav a:focus,
+html[data-theme="light"] .menu a:hover,
+html[data-theme="light"] .menu a:focus,
+html[data-theme="light"] [class*="menu"] a:hover,
+html[data-theme="light"] [class*="menu"] a:focus,
+html[data-theme="light"] [class*="dropdown"] a.active,
+html[data-theme="light"] [class*="dropdown"] a:hover {
+  background-color: #198754 !important; /* Mesmo verde do fundo do menu */
+  color: #ffffff !important;
+}
+
+/* Remove definitivamente o fundo da barra de navegação no desktop e o fundo ativo indesejado */
+html[data-theme="light"] .navbar-nav,
+html[data-theme="light"] .navbar-collapse,
+html[data-theme="light"] nav .nav-wrap,
+html[data-theme="light"] .header-nav {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* Remove o fundo branco/claro do link ativo no topo se houver */
+html[data-theme="light"] .navbar-nav > .active > a,
+html[data-theme="light"] .navbar-nav > .nav-item > a.active,
+html[data-theme="light"] .navbar-nav > .nav-item > a:focus {
+  background-color: transparent !important;
+  color: #ffffff !important;
+}
+
+/* ==========================================
+   HEADER — NAVEGAÇÃO SEM RECTÂNGULOS
+========================================== */
+
+@media (min-width: 1181px) {
+
+    /* Remove o fundo da área de navegação */
+    html[data-theme="light"] .site-header .nav,
+    .site-header .nav {
+        background: transparent !important;
+        background-color: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+
+    /* Remove os fundos dos links */
+    .site-header .nav > a,
+    .site-header .nav > .nav-dropdown > button {
+        background: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+
+    /* Remove o rectângulo do link ativo */
+    .site-header .nav > a.active {
+        background: transparent !important;
+        color: #ffffff !important;
+    }
+
+    /* Hover sem criar rectângulos */
+    .site-header .nav > a:hover,
+    .site-header .nav > .nav-dropdown > button:hover {
+        background: transparent !important;
+        color: #ffffff !important;
+        box-shadow: none !important;
+        transform: none !important;
+    }
+}
+
+
+/* ==========================================
+   OCULTAR "MAIS" APENAS NO HEADER DO PC
+   ========================================== */
+
+/* Computadores */
+@media (min-width: 1181px) {
+    .site-header .nav > .nav-dropdown {
+        display: none !important;
+    }
+}
+
+/* Tablets e telemóveis */
+@media (max-width: 1180px) {
+    .site-header .nav > .nav-dropdown {
+        display: block !important;
+        width: 100% !important;
+    }
+}
+
+
+
+/* ==========================================
+   MENU HAMBÚRGUER — ALINHADO À EXTREMA DIREITA
+========================================== */
+
+@media (max-width: 1180px) {
+    .site-header .nav {
+        right: calc((100vw - 100%)/-2) !important;
+        left: auto !important;
+        border-radius: 0 0 0 14px !important;
     }
 }
