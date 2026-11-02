@@ -11,8 +11,9 @@ const PORT = Number(process.env.PORT || 3000);
 
 app.set('trust proxy', 1);
 
-app.use(express.json({ limit: '15mb' }));
-app.use(express.urlencoded({ extended: true, limit: '15mb' }));
+// Aumentado para 1024mb (1GB) para suportar uploads de vídeos grandes
+app.use(express.json({ limit: '1024mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1024mb' }));
 
 app.use(
   session({
@@ -31,7 +32,6 @@ app.use(
 const ROOT = __dirname;
 const PUBLIC = path.join(ROOT, "public");
 
-// Ligação prioritária ao PostgreSQL / Supabase
 let pool = null;
 if (process.env.DATABASE_URL) {
   try {
@@ -45,9 +45,9 @@ if (process.env.DATABASE_URL) {
   }
 }
 
-// Fallback local seguro (em memória e disco para desenvolvimento local)
 const DATA_DIR = process.env.VERCEL ? path.join('/tmp', 'data') : path.join(ROOT, "data");
 const CONTENT_FILE = path.join(DATA_DIR, "content.json");
+const COMPANY_VIDEO_FILE = path.join(DATA_DIR, "company-video.json");
 let memoryContent = [];
 
 function ensureDataDir() {
@@ -57,6 +57,9 @@ function ensureDataDir() {
     }
     if (!fs.existsSync(CONTENT_FILE)) {
       fs.writeFileSync(CONTENT_FILE, JSON.stringify([]));
+    }
+    if (!fs.existsSync(COMPANY_VIDEO_FILE)) {
+      fs.writeFileSync(COMPANY_VIDEO_FILE, JSON.stringify({ url: "" }));
     }
   } catch (e) {
     console.error("Aviso no diretório de dados:", e);
@@ -71,9 +74,7 @@ function readLocalContent() {
     if (fs.existsSync(CONTENT_FILE)) {
       const data = fs.readFileSync(CONTENT_FILE, 'utf8');
       const parsed = JSON.parse(data || '[]');
-      if (Array.isArray(parsed)) {
-        memoryContent = parsed;
-      }
+      if (Array.isArray(parsed)) memoryContent = parsed;
     }
   } catch (e) {
     console.error("Aviso ao ler ficheiro local:", e);
@@ -91,7 +92,23 @@ function writeLocalContent(contentList) {
   }
 }
 
-// Função para gerar slug único
+function readCompanyVideo() {
+  try {
+    ensureDataDir();
+    if (fs.existsSync(COMPANY_VIDEO_FILE)) {
+      return JSON.parse(fs.readFileSync(COMPANY_VIDEO_FILE, 'utf8') || '{"url":""}');
+    }
+  } catch (_) {}
+  return { url: "" };
+}
+
+function writeCompanyVideo(data) {
+  try {
+    ensureDataDir();
+    fs.writeFileSync(COMPANY_VIDEO_FILE, JSON.stringify(data, null, 2));
+  } catch (_) {}
+}
+
 function generateSlug(title) {
   return String(title || 'conteudo')
     .toLowerCase()
@@ -145,12 +162,19 @@ app.get('/api/admin/me', (req, res) => {
   return res.json({ authenticated: false });
 });
 
-const upload = multer({ storage: multer.memoryStorage() });
+// Multer configurado para suportar até 1GB (1024 * 1024 * 1024 bytes)
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 1024 * 1024 * 1024 } 
+});
 
 app.post('/api/admin/upload', (req, res) => {
   try {
     upload.single('file')(req, res, (err) => {
-      if (err || !req.file) {
+      if (err) {
+        return res.status(400).json({ error: 'O ficheiro excede o limite máximo permitido (1GB).' });
+      }
+      if (!req.file) {
         return res.status(400).json({ error: 'Escolhe primeiro um ficheiro.' });
       }
       const b64 = Buffer.from(req.file.buffer).toString('base64');
@@ -159,13 +183,24 @@ app.post('/api/admin/upload', (req, res) => {
       return res.json({ url: dataUrl, path: dataUrl, filename: req.file.originalname });
     });
   } catch (err) {
-    return res.status(500).json({ error: 'Erro ao processar o upload.' });
+    return res.status(500).json({ error: 'Erro ao processar o upload do ficheiro.' });
   }
 });
 
-// ==========================================
-// ROTAS DE CONTEÚDO (POSTGRESQL + FALLBACK)
-// ==========================================
+// Rotas para o Vídeo Institucional (Quem Somos)
+app.get('/api/company-video', (req, res) => {
+  res.json(readCompanyVideo());
+});
+
+app.post('/api/admin/company-video', (req, res) => {
+  try {
+    const { url } = req.body;
+    writeCompanyVideo({ url: url || "" });
+    return res.json({ ok: true, url });
+  } catch (e) {
+    return res.status(500).json({ error: 'Erro ao guardar o vídeo institucional.' });
+  }
+});
 
 app.get('/api/content', async (req, res) => {
   const type = req.query.type;

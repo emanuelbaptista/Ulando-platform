@@ -114,37 +114,44 @@
   });
 
   // Event delegation for navigation loaded asynchronously.
-  document.addEventListener('click', event => {
+ document.addEventListener('click', event => {
     const moreButton = event.target.closest('.nav-dropdown > button');
 
     if (moreButton) {
-      event.preventDefault();
-      event.stopPropagation();
+        event.preventDefault();
+        event.stopPropagation();
 
-      const wrap = moreButton.closest('.nav-dropdown');
-      const willOpen = !wrap.classList.contains('dropdown-open');
+        const wrap = moreButton.closest('.nav-dropdown');
+        if (!wrap) return;
 
-      closeMoreMenu();
+        const isOpen = wrap.classList.contains('dropdown-open');
 
-      wrap.classList.toggle('dropdown-open', willOpen);
-      moreButton.setAttribute('aria-expanded', String(willOpen));
+        // Fecha todos os menus abertos primeiro
+        closeMoreMenu();
 
-      return;
+        // Se o menu clicado não estava aberto, abre-o agora
+        if (!isOpen) {
+            wrap.classList.add('dropdown-open');
+            moreButton.setAttribute('aria-expanded', 'true');
+        }
+        return;
     }
 
     const closeMoreButton = event.target.closest('.dropdown-close');
-
     if (closeMoreButton) {
-      event.preventDefault();
-      closeMoreMenu();
-      return;
+        event.preventDefault();
+        closeMoreMenu();
+        return;
+    }
+
+    // Se o utilizador clicar fora do dropdown "Mais", fecha-o
+    if (!event.target.closest('.nav-dropdown')) {
+        closeMoreMenu();
     }
 
     const navLink = event.target.closest('.nav a');
-
     if (navLink) closeMenu();
-  });
-
+});
   // Build navigation from the server.
   fetch('/api/navigation')
     .then(response => response.ok ? response.json() : [])
