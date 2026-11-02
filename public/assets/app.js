@@ -68,29 +68,35 @@
     });
   };
 
-  const closeMenu = () => {
+const closeMenu = () => {
     nav?.classList.remove('open');
     document.body.classList.remove('menu-panel-open');
     backdrop.classList.remove('visible');
+    document.body.style.overflow = '';
 
     menuBtn?.setAttribute('aria-expanded', 'false');
     menuBtn?.setAttribute('aria-label', 'Abrir menu');
     menuBtn?.setAttribute('title', 'Abrir menu');
 
     closeMoreMenu();
-  };
-
-  const openMenu = () => {
+};
+const openMenu = () => {
     if (!nav) return;
 
     nav.classList.add('open');
+
+    document.documentElement.classList.add('menu-panel-open');
     document.body.classList.add('menu-panel-open');
+
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
     backdrop.classList.add('visible');
 
     menuBtn?.setAttribute('aria-expanded', 'true');
     menuBtn?.setAttribute('aria-label', 'Fechar menu');
     menuBtn?.setAttribute('title', 'Fechar menu');
-  };
+};
 
   menuBtn?.addEventListener('click', event => {
     event.preventDefault();
